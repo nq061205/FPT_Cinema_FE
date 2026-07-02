@@ -1,0 +1,17 @@
+export const MOVIE_GENRES = ['ACTION', 'COMEDY', 'ROMANCE', 'HORROR', 'SCI_FI', 'DRAMA']
+
+export const MOVIE_STATUSES = ['COMING_SOON', 'NOW_SHOWING', 'END_OF_SHOWING']
+
+export const SHOWTIME_STATUSES = ['OPEN', 'SOLD_OUT', 'CANCELLED', 'FINISHED']
+
+export const SEAT_TYPES = ['NORMAL', 'VIP', 'COUPLE', 'PREMIUM']
+
+export const SEAT_STATUSES = ['ACTIVE', 'LOCKED', 'BROKEN']
+
+export const BOOKING_STATUSES = ['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED']
+
+export const USER_STATUSES = ['ACTIVE', 'INACTIVE', 'LOCKED']
+
+export const REPORT_GROUPS = ['DAY', 'WEEK', 'MONTH', 'YEAR']
+
+export const PAYMENT_METHODS = ['CASH', 'VNPAY']
