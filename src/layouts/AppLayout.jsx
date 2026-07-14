@@ -1,14 +1,18 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { adminNavigation, mainNavigation } from '../config/navigation.js'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { adminNavigation, customerNavigation, mainNavigation } from '../config/navigation.js'
 import { env } from '../config/env.js'
 import { useAuth } from '../hooks/useAuth.js'
 
 function AppLayout() {
+  const location = useLocation()
   const navigate = useNavigate()
   const { hasPermission, hasRole, logout, user } = useAuth()
+  const isStaff = hasRole(['ADMIN', 'MANAGER'])
+  const visibleMainLinks = isStaff ? mainNavigation : customerNavigation
   const visibleAdminLinks = adminNavigation.filter((item) => {
     return hasRole(item.roles ?? []) && hasPermission(item.permissions ?? [])
   })
+  const isBookingFlow = location.pathname === '/booking'
 
   async function handleLogout() {
     await logout()
@@ -16,15 +20,16 @@ function AppLayout() {
   }
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
+    <div className={`app-shell${isBookingFlow ? ' app-shell--booking' : ''}`}>
+      {!isBookingFlow ? (
+        <aside className="sidebar">
         <NavLink to="/" className="brand">
           <span className="brand-mark">FC</span>
           <span>{env.appName}</span>
         </NavLink>
 
         <nav className="nav-stack" aria-label="Main navigation">
-          {mainNavigation.map((item) => (
+          {visibleMainLinks.map((item) => (
             <NavLink key={item.path} to={item.path} end={item.path === '/'}>
               {item.label}
             </NavLink>
@@ -41,7 +46,8 @@ function AppLayout() {
             ))}
           </nav>
         ) : null}
-      </aside>
+        </aside>
+      ) : null}
 
       <div className="workspace">
         <header className="topbar">
