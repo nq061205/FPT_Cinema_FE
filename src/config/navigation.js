@@ -1,10 +1,17 @@
 export const mainNavigation = [
-  { label: 'Dashboard', path: '/' },
+  { label: 'Dashboard', path: '/dashboard' },
   { label: 'Movies', path: '/movies' },
   { label: 'Showtimes', path: '/showtimes' },
   { label: 'Booking', path: '/booking' },
   { label: 'My tickets', path: '/bookings' },
   { label: 'Support', path: '/support' },
+]
+
+export const customerNavigation = [
+  { label: 'Profile', path: '/profile' },
+  { label: 'My voucher', path: '/vouchers' },
+  { label: 'Support', path: '/support' },
+  { label: 'Lịch sử thanh toán', path: '/payment-history' },
 ]
 
 export const adminNavigation = [
