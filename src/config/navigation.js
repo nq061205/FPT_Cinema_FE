@@ -1,9 +1,21 @@
 export const mainNavigation = [
-  { label: 'Dashboard', path: '/dashboard' },
-  { label: 'Movies', path: '/movies' },
-  { label: 'Showtimes', path: '/showtimes' },
-  { label: 'Booking', path: '/booking' }
-]
+  { label: "Dashboard", path: "/dashboard" },
+  { label: "Movies", path: "/movies" },
+  { label: "Showtimes", path: "/showtimes" },
+  { label: "Booking", path: "/booking" },
+  { label: "My tickets", path: "/bookings" },
+  { label: "Support", path: "/support" },
+];
+
+
+
+export const managerNavigation = [
+  { label: "Dashboard", path: "/manager", end: true },
+  { label: "Movies", path: "/manager/movies" },
+  { label: "Reviews", path: "/manager/reviews" },
+  { label: "Rooms & Seats", path: "/manager/rooms" },
+  { label: "Showtimes", path: "/manager/showtimes" },
+];
 
 export const customerNavigation = [
   { label: 'Profile', path: '/profile' },

@@ -22,9 +22,9 @@ function LoginPage() {
   function updateField(event) { setForm((current) => ({ ...current, [event.target.name]: event.target.value })) }
 
   async function handleSubmit(event) {
-    event.preventDefault()
-    setSubmitting(true)
-    setError(null)
+    event.preventDefault();
+    setSubmitting(true);
+    setError(null);
 
     try {
       const account = await login(form)
@@ -34,9 +34,9 @@ function LoginPage() {
         : getRoleHome(account?.role)
       navigate(destination, { replace: true })
     } catch (err) {
-      setError(err)
+      setError(err);
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
   }
 
@@ -77,15 +77,19 @@ function LoginPage() {
         />
       </label>
 
-      <button className="btn btn-danger w-100" type="submit" disabled={submitting}>
-        {submitting ? 'Signing in...' : 'Sign in'}
+      <button
+        className="btn btn-danger w-100"
+        type="submit"
+        disabled={submitting}
+      >
+        {submitting ? "Signing in..." : "Sign in"}
       </button>
 
       <p className="auth-switch">
         New account? <Link to="/register">Register</Link>
       </p>
     </form>
-  )
+  );
 }
 
 export default LoginPage
