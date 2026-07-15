@@ -9,6 +9,17 @@ export function AuthProvider({ children }) {
   const [bootstrapping, setBootstrapping] = useState(Boolean(getAccessToken()))
 
   useEffect(() => {
+    function handleAuthExpired() {
+      setToken(null)
+      setUser(null)
+      setBootstrapping(false)
+    }
+
+    window.addEventListener('fpt-cinema-auth-expired', handleAuthExpired)
+    return () => window.removeEventListener('fpt-cinema-auth-expired', handleAuthExpired)
+  }, [])
+
+  useEffect(() => {
     let mounted = true
 
     async function loadCurrentUser() {
@@ -62,10 +73,20 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
+  // Xóa phiên phía client mà không gọi API logout — dùng khi token đã bị
+  // backend thu hồi (ví dụ sau khi đổi mật khẩu, mọi phiên đều bị vô hiệu hóa).
+  const endSession = useCallback(() => {
+    clearSession()
+    setToken(null)
+    setUser(null)
+  }, [])
+
   const hasRole = useCallback(
     (roles = []) => {
       if (!roles.length) return true
-      return roles.some((role) => role.toUpperCase() === user?.role?.toUpperCase())
+      const currentRole = user?.role?.trim().toUpperCase()
+      if (currentRole === 'ADMIN') return true
+      return roles.some((role) => role.trim().toUpperCase() === currentRole)
     },
     [user],
   )
@@ -73,8 +94,12 @@ export function AuthProvider({ children }) {
   const hasPermission = useCallback(
     (permissions = []) => {
       if (!permissions.length) return true
-      const userPermissions = user?.permissions ?? []
-      return permissions.some((permission) => userPermissions.includes(permission))
+      if (user?.role?.trim().toUpperCase() === 'ADMIN') return true
+
+      const userPermissions = new Set(
+        (user?.permissions ?? []).map((permission) => permission.trim().toUpperCase()),
+      )
+      return permissions.some((permission) => userPermissions.has(permission.trim().toUpperCase()))
     },
     [user],
   )
@@ -82,6 +107,7 @@ export function AuthProvider({ children }) {
   const value = useMemo(
     () => ({
       bootstrapping,
+      endSession,
       hasPermission,
       hasRole,
       isAuthenticated: Boolean(token),
@@ -91,7 +117,7 @@ export function AuthProvider({ children }) {
       token,
       user,
     }),
-    [bootstrapping, hasPermission, hasRole, login, logout, register, token, user],
+    [bootstrapping, endSession, hasPermission, hasRole, login, logout, register, token, user],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

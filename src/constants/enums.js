@@ -8,6 +8,8 @@ export const SEAT_TYPES = ['NORMAL', 'VIP', 'COUPLE', 'PREMIUM']
 
 export const SEAT_STATUSES = ['ACTIVE', 'LOCKED', 'BROKEN']
 
+export const ROOM_TYPES = ['STANDARD', 'VIP', 'IMAX', 'FOUR_DX', 'DOLBY']
+
 export const BOOKING_STATUSES = ['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED']
 
 export const USER_STATUSES = ['ACTIVE', 'INACTIVE', 'LOCKED']
@@ -15,3 +17,13 @@ export const USER_STATUSES = ['ACTIVE', 'INACTIVE', 'LOCKED']
 export const REPORT_GROUPS = ['DAY', 'WEEK', 'MONTH', 'YEAR']
 
 export const PAYMENT_METHODS = ['CASH', 'VNPAY']
+
+export const PRODUCT_TYPES = ['FOOD', 'BEVERAGE', 'COMBO']
+
+export const PAYMENT_STATUSES = ['PENDING', 'COMPLETED', 'FAILED', 'REFUNDED']
+
+export const MEMBERSHIP_LEVELS = ['BRONZE', 'SILVER', 'GOLD', 'DIAMOND', 'PLATINUM']
+
+export const BOOKING_CHANNELS = ['ONLINE', 'COUNTER']
+
+export const PROMOTION_TYPES = ['PERCENTAGE', 'FIXED_AMOUNT', 'FREE_TICKET', 'FREE_COMBO']

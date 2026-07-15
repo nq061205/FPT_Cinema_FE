@@ -1,22 +1,25 @@
-import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import ErrorMessage from "../../components/common/ErrorMessage.jsx";
-import { useAuth } from "../../hooks/useAuth.js";
+import { useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import ErrorMessage from '../../components/common/ErrorMessage.jsx'
+import { useAuth } from '../../hooks/useAuth.js'
+import { getRoleHome } from '../../lib/roleHome.js'
 
 function LoginPage() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { login } = useAuth();
-  const [form, setForm] = useState({ email: "", password: "" });
-  const [error, setError] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { login } = useAuth()
+  const [form, setForm] = useState({ email: '', password: '' })
+  const [error, setError] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [notice] = useState(
+    () => location.state?.notice ?? window.sessionStorage.getItem('auth_notice') ?? '',
+  )
 
-  function updateField(event) {
-    setForm((current) => ({
-      ...current,
-      [event.target.name]: event.target.value,
-    }));
-  }
+  useEffect(() => {
+    window.sessionStorage.removeItem('auth_notice')
+  }, [])
+
+  function updateField(event) { setForm((current) => ({ ...current, [event.target.name]: event.target.value })) }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -24,15 +27,12 @@ function LoginPage() {
     setError(null);
 
     try {
-      const user = await login(form);
-      const role = user?.role?.toUpperCase();
-      console.log("Login response role:", user?.role, "→", role);
-      const destination =
-        role === "MANAGER"
-          ? "/manager"
-          : (location.state?.from?.pathname ?? "/");
-      console.log("Navigating to:", destination);
-      navigate(destination, { replace: true });
+      const account = await login(form)
+      const from = location.state?.from
+      const destination = from
+        ? `${from.pathname}${from.search ?? ''}${from.hash ?? ''}`
+        : getRoleHome(account?.role)
+      navigate(destination, { replace: true })
     } catch (err) {
       setError(err);
     } finally {
@@ -46,6 +46,8 @@ function LoginPage() {
         <span className="eyebrow">Welcome back</span>
         <h2>Sign in</h2>
       </div>
+
+      {notice ? <div className="alert alert-success">{notice}</div> : null}
 
       <ErrorMessage error={error} title="Login failed" />
 
@@ -90,4 +92,4 @@ function LoginPage() {
   );
 }
 
-export default LoginPage;
+export default LoginPage

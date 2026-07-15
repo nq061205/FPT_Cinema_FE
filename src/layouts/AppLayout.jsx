@@ -13,63 +13,67 @@ import {
 import { env } from "../config/env.js";
 import { useAuth } from "../hooks/useAuth.js";
 
+import ChatbotWidget from '../components/chat/ChatbotWidget.jsx'
+import Logo from '../assets/gemini-svg.svg'
+
 function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { hasPermission, hasRole, logout, user } = useAuth();
+  const isStaff = hasRole(['ADMIN', 'MANAGER', 'STAFF'])
 
   if (hasRole(["MANAGER"])) {
     return <Navigate to="/manager" replace />;
   }
 
-  const isStaff = hasRole(["ADMIN"]);
-  const visibleMainLinks = isStaff ? mainNavigation : customerNavigation;
+  const visibleMainLinks = isStaff
+    ? []
+    : [
+        ...mainNavigation,
+        ...customerNavigation.filter(
+          (customerItem) => !mainNavigation.some((mainItem) => mainItem.path === customerItem.path)
+        ),
+      ]
   const visibleAdminLinks = adminNavigation.filter((item) => {
-    return hasRole(item.roles ?? []) && hasPermission(item.permissions ?? []);
-  });
+    return hasRole(item.roles ?? []) && hasPermission(item.permissions ?? [])
+  })
   const isBookingFlow = location.pathname === "/booking";
-
   async function handleLogout() {
     await logout();
     navigate("/login", { replace: true });
   }
 
   return (
-    <div className={`app-shell${isBookingFlow ? " app-shell--booking" : ""}`}>
-      {!isBookingFlow ? (
-        <aside className="sidebar">
-          <NavLink to="/" className="brand">
-            <span className="brand-mark">FC</span>
-            <span>{env.appName}</span>
-          </NavLink>
+    <div className="app-shell">
+      <aside className="sidebar">
+        <NavLink to="/" className="brand" end>
+          <img src={Logo} alt={env.appName} className="brand-logo" />
+        </NavLink>
 
+        {visibleMainLinks.length ? (
           <nav className="nav-stack" aria-label="Main navigation">
             {visibleMainLinks.map((item) => (
-              <NavLink key={item.path} to={item.path} end={item.path === "/"}>
+              <NavLink key={item.path} to={item.path} end={item.path === '/'}>
                 {item.label}
               </NavLink>
             ))}
           </nav>
+        ) : null}
 
-          {visibleAdminLinks.length ? (
-            <nav
-              className="nav-stack nav-stack--admin"
-              aria-label="Admin navigation"
-            >
-              <span className="nav-label">Management</span>
-              {visibleAdminLinks.map((item) => (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  end={item.path === "/admin"}
-                >
-                  {item.label}
-                </NavLink>
-              ))}
-            </nav>
-          ) : null}
-        </aside>
-      ) : null}
+        {visibleAdminLinks.length ? (
+          <nav
+            className={`nav-stack${visibleMainLinks.length ? ' nav-stack--admin' : ''}`}
+            aria-label="Admin navigation"
+          >
+            <span className="nav-label">Management</span>
+            {visibleAdminLinks.map((item) => (
+              <NavLink key={item.path} to={item.path} end={item.end}>
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+        ) : null}
+      </aside>
 
       <div className="workspace">
         <header className="topbar">
@@ -92,8 +96,9 @@ function AppLayout() {
           <Outlet />
         </main>
       </div>
+      {location.pathname !== '/support' ? <ChatbotWidget /> : null}
     </div>
   );
 }
 
-export default AppLayout;
+export default AppLayout
