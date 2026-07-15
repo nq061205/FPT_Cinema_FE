@@ -50,7 +50,7 @@ function RegisterPage() {
 
       <label className="form-label">
         Phone
-        <input className="form-control" name="phone" value={form.phone} onChange={updateField} required />
+        <input className="form-control" name="phone" inputMode="numeric" pattern="[0-9]{9,15}" title="Phone must contain 9 to 15 digits" value={form.phone} onChange={updateField} required />
       </label>
 
       <label className="form-label">
@@ -63,6 +63,7 @@ function RegisterPage() {
           onChange={updateField}
           required
           minLength={8}
+          maxLength={100}
         />
       </label>
 

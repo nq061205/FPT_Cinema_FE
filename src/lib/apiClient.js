@@ -47,6 +47,7 @@ apiClient.interceptors.response.use(
 
     if (status === 401) {
       clearSession()
+      if (typeof window !== 'undefined') window.dispatchEvent(new Event('fpt-cinema-auth-expired'))
     }
 
     return Promise.reject(

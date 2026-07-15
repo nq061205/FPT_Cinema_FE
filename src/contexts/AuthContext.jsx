@@ -9,6 +9,17 @@ export function AuthProvider({ children }) {
   const [bootstrapping, setBootstrapping] = useState(Boolean(getAccessToken()))
 
   useEffect(() => {
+    function handleAuthExpired() {
+      setToken(null)
+      setUser(null)
+      setBootstrapping(false)
+    }
+
+    window.addEventListener('fpt-cinema-auth-expired', handleAuthExpired)
+    return () => window.removeEventListener('fpt-cinema-auth-expired', handleAuthExpired)
+  }, [])
+
+  useEffect(() => {
     let mounted = true
 
     async function loadCurrentUser() {
@@ -65,7 +76,9 @@ export function AuthProvider({ children }) {
   const hasRole = useCallback(
     (roles = []) => {
       if (!roles.length) return true
-      return roles.some((role) => role.toUpperCase() === user?.role?.toUpperCase())
+      const currentRole = user?.role?.trim().toUpperCase()
+      if (currentRole === 'ADMIN') return true
+      return roles.some((role) => role.trim().toUpperCase() === currentRole)
     },
     [user],
   )
@@ -73,8 +86,12 @@ export function AuthProvider({ children }) {
   const hasPermission = useCallback(
     (permissions = []) => {
       if (!permissions.length) return true
-      const userPermissions = user?.permissions ?? []
-      return permissions.some((permission) => userPermissions.includes(permission))
+      if (user?.role?.trim().toUpperCase() === 'ADMIN') return true
+
+      const userPermissions = new Set(
+        (user?.permissions ?? []).map((permission) => permission.trim().toUpperCase()),
+      )
+      return permissions.some((permission) => userPermissions.has(permission.trim().toUpperCase()))
     },
     [user],
   )

@@ -7,7 +7,10 @@ import { asArray } from '../../lib/collections.js'
 import { formatLabel } from '../../lib/formatters.js'
 import { useAsync } from '../../hooks/useAsync.js'
 import { movieService } from '../../services/movie.service.js'
+import { useAuth } from '../../hooks/useAuth.js'
 import { reviewService } from '../../services/review.service.js'
+
+const EMPTY_MOVIES = []
 
 function MovieRow({ movies }) {
   if (!movies.length) {
@@ -141,17 +144,26 @@ function SpotlightCarousel({ movies, onPlayTrailer }) {
 }
 
 function HomePage() {
+  const { isAuthenticated } = useAuth()
   const loadMovies = useCallback(async () => asArray(await movieService.list()), [])
-  const { data: movies, error, loading } = useAsync(loadMovies, { initialData: [] })
+  // The backend protects the movie catalog. Avoid a guaranteed 401 for a
+  // guest landing on the public homepage; the chatbot still opens and offers
+  // a login action for the authenticated conversation API.
+  const { data: movies, error, loading } = useAsync(loadMovies, { initialData: [], immediate: isAuthenticated })
+  const visibleMovies = isAuthenticated ? movies : EMPTY_MOVIES
   const [trailerMovie, setTrailerMovie] = useState(null)
 
   const nowShowing = useMemo(
-    () => movies.filter((movie) => (movie.status ?? 'NOW_SHOWING') === 'NOW_SHOWING'),
-    [movies],
+    () => visibleMovies.filter((movie) => {
+      if (movie.status) return movie.status === 'NOW_SHOWING'
+      if (!movie.releaseDate) return false
+      return new Date(movie.releaseDate) <= new Date()
+    }),
+    [visibleMovies],
   )
   const comingSoon = useMemo(
-    () => movies.filter((movie) => movie.status === 'COMING_SOON'),
-    [movies],
+    () => visibleMovies.filter((movie) => movie.status === 'COMING_SOON' || (!movie.status && (!movie.releaseDate || new Date(movie.releaseDate) > new Date()))),
+    [visibleMovies],
   )
 
   const loadMostWatched = useCallback(async () => {
@@ -176,7 +188,9 @@ function HomePage() {
     <div className="page-stack">
       <SpotlightCarousel movies={mostWatched} onPlayTrailer={setTrailerMovie} />
 
-      <DataState error={error} loading={loading}>
+      {!isAuthenticated ? <div className="alert alert-info mb-0">Đăng nhập để tải catalog phim, lịch chiếu và đặt vé. Bạn vẫn có thể mở trợ lý 🤖 ở góc phải để bắt đầu.</div> : null}
+
+      <DataState error={isAuthenticated ? error : null} loading={loading}>
         <section className="panel">
           <div className="panel-header">
             <h2>Phim đang chiếu</h2>

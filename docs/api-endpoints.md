@@ -37,6 +37,7 @@ Authorization: Bearer <accessToken>
 | DELETE | `/showtimes/{id}` | `showtimeService.cancel` |
 | GET | `/showtimes/{id}/seats` | `showtimeService.seatMap` |
 | POST | `/showtimes/list` | `showtimeService.listCompact` |
+| GET | `/v1/branches/{branchId}/showtimes/quick` | `showtimeService.quickList` |
 | POST | `/seat/list` | `seatService.viewMap` |
 | POST | `/seat/detail` | `seatService.detail` |
 
@@ -63,9 +64,22 @@ Authorization: Bearer <accessToken>
 | POST | `/booking/list` | `bookingService.history` |
 | POST | `/product/list` | `productService.list` |
 | POST | `/product/detail` | `productService.detail` |
+| POST | `/product/create` | `productService.create` |
+| PUT | `/product/{id}` | `productService.update` |
 | POST | `/promotion/detail` | `promotionService.detail` |
 | POST | `/promotion/apply` | `promotionService.apply` |
 | POST | `/user-promotion/my-promotions` | `promotionService.myPromotions` |
+
+## Payments
+
+| Method | Path | Service |
+| --- | --- | --- |
+| POST | `/payment/create` | `paymentService.create` |
+| POST | `/payment/cash` | `paymentService.createCash` |
+| POST | `/payment/cash/confirm` | `paymentService.confirmCash` |
+| GET | `/payment/history` | `paymentService.history` |
+| GET | `/payment/{paymentCode}` | `paymentService.getByCode` |
+| GET | `/payment/vnpay/return` | `paymentService.vnpayReturn` |
 
 ## Users and permissions
 

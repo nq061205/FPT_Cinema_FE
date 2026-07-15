@@ -45,6 +45,11 @@ function ProfilePage() {
     setActionError(null)
     setMessage('')
 
+    if (!form.fullName.trim() || !/^[0-9]{9,15}$/.test(form.phone.trim())) {
+      setActionError(new Error('Full name is required and phone must contain 9 to 15 digits.'))
+      return
+    }
+
     try {
       const updated = await profileService.update(form)
       setData(updated)
@@ -58,6 +63,15 @@ function ProfilePage() {
     event.preventDefault()
     setActionError(null)
     setMessage('')
+
+    if (passwordForm.newPassword.length < 8) {
+      setActionError(new Error('New password must contain at least 8 characters.'))
+      return
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmNewPassword) {
+      setActionError(new Error('New password and confirmation do not match.'))
+      return
+    }
 
     try {
       await profileService.changePassword(passwordForm)
@@ -84,12 +98,12 @@ function ProfilePage() {
 
           <label className="form-label">
             Full name
-            <input className="form-control" name="fullName" value={form.fullName} onChange={updateProfileField} />
+            <input className="form-control" name="fullName" value={form.fullName} onChange={updateProfileField} required maxLength="100" />
           </label>
 
           <label className="form-label">
             Phone
-            <input className="form-control" name="phone" value={form.phone} onChange={updateProfileField} />
+            <input className="form-control" name="phone" inputMode="numeric" pattern="[0-9]{9,15}" title="Phone must contain 9 to 15 digits" value={form.phone} onChange={updateProfileField} required />
           </label>
 
           <dl className="detail-list">
@@ -111,17 +125,17 @@ function ProfilePage() {
 
           <label className="form-label">
             Current password
-            <input className="form-control" name="oldPassword" type="password" value={passwordForm.oldPassword} onChange={updatePasswordField} />
+            <input className="form-control" name="oldPassword" type="password" value={passwordForm.oldPassword} onChange={updatePasswordField} required />
           </label>
 
           <label className="form-label">
             New password
-            <input className="form-control" name="newPassword" type="password" value={passwordForm.newPassword} onChange={updatePasswordField} />
+            <input className="form-control" name="newPassword" type="password" minLength="8" maxLength="100" value={passwordForm.newPassword} onChange={updatePasswordField} required />
           </label>
 
           <label className="form-label">
             Confirm password
-            <input className="form-control" name="confirmNewPassword" type="password" value={passwordForm.confirmNewPassword} onChange={updatePasswordField} />
+            <input className="form-control" name="confirmNewPassword" type="password" minLength="8" maxLength="100" value={passwordForm.confirmNewPassword} onChange={updatePasswordField} required />
           </label>
 
           <button className="btn btn-outline-dark" type="submit">Change password</button>

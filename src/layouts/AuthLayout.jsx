@@ -2,12 +2,13 @@ import { Navigate, Outlet } from 'react-router-dom'
 import { env } from '../config/env.js'
 import { useAuth } from '../hooks/useAuth.js'
 import LoadingScreen from '../components/common/LoadingScreen.jsx'
+import { getDefaultRouteForUser } from '../lib/authRouting.js'
 
 function AuthLayout() {
-  const { bootstrapping, isAuthenticated } = useAuth()
+  const { bootstrapping, isAuthenticated, user } = useAuth()
 
   if (bootstrapping) return <LoadingScreen />
-  if (isAuthenticated) return <Navigate to="/" replace />
+  if (isAuthenticated) return <Navigate to={getDefaultRouteForUser(user)} replace />
 
   return (
     <main className="auth-shell">
