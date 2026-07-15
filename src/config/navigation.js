@@ -11,14 +11,11 @@ export const mainNavigation = [
 
 export const managerNavigation = [
   { label: "Dashboard", path: "/manager", end: true },
+  { label: "Movies", path: "/manager/movies" },
   { label: "Reviews", path: "/manager/reviews" },
   { label: "Rooms & Seats", path: "/manager/rooms" },
   { label: "Showtimes", path: "/manager/showtimes" },
-  // { label: 'Dashboard', path: '/dashboard' },
-  { label: 'Movies', path: '/movies' },
-  { label: 'Showtimes', path: '/showtimes' },
-  { label: 'Booking', path: '/booking' }
-]
+];
 
 export const customerNavigation = [
   { label: 'Profile', path: '/profile' },

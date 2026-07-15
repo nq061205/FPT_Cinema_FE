@@ -4,6 +4,12 @@ import StatCard from "../../components/common/StatCard.jsx";
 
 const modules = [
   {
+    title: "Movies",
+    path: "/manager/movies",
+    description: "Manage movie catalog and details.",
+    icon: "",
+  },
+  {
     title: "Reviews",
     path: "/manager/reviews",
     description: "Moderate user reviews and ratings.",

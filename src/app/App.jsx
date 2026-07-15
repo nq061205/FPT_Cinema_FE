@@ -32,7 +32,6 @@ import BookingHistoryPage from "../pages/booking/BookingHistoryPage.jsx";
 import MovieDetailPage from "../pages/movies/MovieDetailPage.jsx";
 import MovieListPage from "../pages/movies/MovieListPage.jsx";
 
-import PaymentHistoryPage from "../pages/payment/PaymentHistoryPage.jsx";
 import PaymentReturnPage from '../pages/payment/PaymentReturnPage.jsx';
 import PaymentResultPage from '../pages/payment/PaymentResultPage.jsx';
 
@@ -79,7 +78,6 @@ function App() {
               <Route path="profile" element={<ProfilePage />} />
               <Route path="vouchers" element={<VoucherPage />} />
               <Route path="payment/return" element={<PaymentReturnPage />} />
-              <Route path="payment-history" element={<PaymentHistoryPage />} />
               <Route path="support" element={<SupportChatPage />} />
 
               <Route element={<ProtectedRoute roles={["ADMIN"]} />}>
@@ -109,6 +107,7 @@ function App() {
             <Route element={<ProtectedRoute roles={["MANAGER"]} />}>
               <Route element={<ManagerLayout />}>
                 <Route path="manager" element={<ManagerDashboardPage />} />
+                <Route path="manager/movies" element={<MovieManagementPage />} />
                 <Route path="manager/reviews" element={<ReviewManagementPage />} />
                 <Route path="manager/rooms" element={<ManagerRoomManagementPage />} />
                 <Route path="manager/showtimes" element={<ShowtimeManagementPage />} />
