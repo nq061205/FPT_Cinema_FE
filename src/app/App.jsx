@@ -30,6 +30,10 @@ function App() {
         <Routes>
           <Route element={<PublicLayout />}>
             <Route index element={<HomePage />} />
+
+            <Route element={<ProtectedRoute />}>
+              <Route path="movies/:movieId" element={<MovieDetailPage />} />
+            </Route>
           </Route>
 
           <Route element={<AuthLayout />}>
@@ -41,7 +45,6 @@ function App() {
             <Route element={<AppLayout />}>
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="movies" element={<MovieListPage />} />
-              <Route path="movies/:movieId" element={<MovieDetailPage />} />
               <Route path="showtimes" element={<ShowtimeListPage />} />
               <Route path="booking" element={<BookingFlowPage />} />
               <Route path="bookings" element={<BookingHistoryPage />} />

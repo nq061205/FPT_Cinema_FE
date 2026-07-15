@@ -11,7 +11,12 @@ export const customerNavigation = [
   { label: 'Profile', path: '/profile' },
   { label: 'My voucher', path: '/vouchers' },
   { label: 'Support', path: '/support' },
-  { label: 'Lịch sử thanh toán', path: '/payment-history' },
+  { label: 'Lịch sử đặt vé', path: '/payment-history' },
+]
+
+export const staffNavigation = [
+  { label: 'Kiểm tra vé', path: '/staff/check-ticket' },
+  { label: 'Bán vé tại quầy', path: '/staff/counter-booking' },
 ]
 
 export const adminNavigation = [

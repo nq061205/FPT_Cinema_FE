@@ -1,52 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import DataState from '../../components/common/DataState.jsx'
 import EmptyState from '../../components/common/EmptyState.jsx'
+import TrailerModal from '../../components/common/TrailerModal.jsx'
 import { asArray } from '../../lib/collections.js'
 import { formatLabel } from '../../lib/formatters.js'
 import { useAsync } from '../../hooks/useAsync.js'
 import { movieService } from '../../services/movie.service.js'
-
-function toEmbedUrl(url) {
-  const youtubeMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]+)/)
-  return youtubeMatch ? `https://www.youtube.com/embed/${youtubeMatch[1]}?autoplay=1` : null
-}
-
-function TrailerModal({ movie, onClose }) {
-  useEffect(() => {
-    function handleKeyDown(event) {
-      if (event.key === 'Escape') onClose()
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
-
-  const embedUrl = toEmbedUrl(movie.trailerUrl)
-
-  return (
-    <div className="trailer-modal" onClick={onClose}>
-      <div className="trailer-modal__dialog" onClick={(event) => event.stopPropagation()}>
-        <button className="trailer-modal__close" type="button" onClick={onClose} aria-label="Đóng trailer">
-          ×
-        </button>
-        <div className="trailer-modal__player">
-          {embedUrl ? (
-            <iframe
-              src={embedUrl}
-              title={`Trailer ${movie.title}`}
-              allow="autoplay; encrypted-media; picture-in-picture"
-              allowFullScreen
-            />
-          ) : (
-            <video src={movie.trailerUrl} controls autoPlay />
-          )}
-        </div>
-        <h2>{movie.title}</h2>
-      </div>
-    </div>
-  )
-}
+import { reviewService } from '../../services/review.service.js'
 
 function MovieRow({ movies }) {
   if (!movies.length) {
@@ -89,8 +50,7 @@ function SpotlightCarousel({ movies, onPlayTrailer }) {
           <h1>Đặt vé xem phim nhanh chóng</h1>
           <p>Khám phá phim đang chiếu, lịch chiếu mới nhất và đặt vé chỉ trong vài bước.</p>
           <div className="page-actions">
-            <Link className="btn btn-danger" to="/showtimes">Chọn suất chiếu</Link>
-            <Link className="btn btn-outline-light" to="/showtimes">Xem lịch chiếu</Link>
+            <Link className="btn btn-danger" to="/movies">Đặt vé ngay</Link>
           </div>
         </div>
       </section>
@@ -154,8 +114,7 @@ function SpotlightCarousel({ movies, onPlayTrailer }) {
             <h1>{current.title}</h1>
             <p>{formatLabel(current.genre)} · {current.durationMinutes ?? '-'} phút · {current.ageRating ?? 'NR'}</p>
             <div className="page-actions">
-              <Link className="btn btn-danger" to="/showtimes">Chọn suất chiếu</Link>
-              <Link className="btn btn-outline-light" to="/showtimes">Xem lịch chiếu</Link>
+              <Link className="btn btn-danger" to={`/movies/${current.id}`}>Đặt vé ngay</Link>
             </div>
           </div>
         </div>
@@ -195,9 +154,27 @@ function HomePage() {
     [movies],
   )
 
+  const loadMostWatched = useCallback(async () => {
+    if (!nowShowing.length) return []
+
+    const withReviewCounts = await Promise.all(
+      nowShowing.map(async (movie) => {
+        const reviews = await reviewService.listByMovie(movie.id).catch(() => [])
+        return { movie, reviewCount: asArray(reviews).length }
+      }),
+    )
+
+    return withReviewCounts
+      .sort((a, b) => b.reviewCount - a.reviewCount)
+      .slice(0, 3)
+      .map((entry) => entry.movie)
+  }, [nowShowing])
+
+  const { data: mostWatched } = useAsync(loadMostWatched, { initialData: [] })
+
   return (
     <div className="page-stack">
-      <SpotlightCarousel movies={nowShowing} onPlayTrailer={setTrailerMovie} />
+      <SpotlightCarousel movies={mostWatched} onPlayTrailer={setTrailerMovie} />
 
       <DataState error={error} loading={loading}>
         <section className="panel">
