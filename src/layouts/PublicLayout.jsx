@@ -1,26 +1,24 @@
-import { NavLink, Outlet } from 'react-router-dom'
-import { env } from '../config/env.js'
-import { useAuth } from '../hooks/useAuth.js'
-
+import { NavLink, Outlet } from "react-router-dom";
+import { env } from "../config/env.js";
+import { useAuth } from "../hooks/useAuth.js";
+import Logo from "../assets/gemini-svg.svg";
 function PublicLayout() {
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, user } = useAuth();
 
   return (
     <div className="public-shell">
       <header className="public-navbar">
         <NavLink to="/" className="brand" end>
-          <span className="brand-mark">FC</span>
-          <span>{env.appName}</span>
+          <img src={Logo} alt={env.appName} className="brand-logo" />
         </NavLink>
-
         <div className="public-nav-actions">
           {isAuthenticated ? (
             <>
               <NavLink className="btn btn-outline-light btn-sm" to="/bookings">
-                Vé của tôi
+                Lịch sử đặt vé
               </NavLink>
               <NavLink className="btn btn-danger btn-sm" to="/profile">
-                {user?.fullName ?? user?.email ?? 'Tài khoản'}
+                {user?.fullName ?? user?.email ?? "Tài khoản"}
               </NavLink>
             </>
           ) : (
@@ -45,11 +43,16 @@ function PublicLayout() {
           <span className="brand-mark">FC</span>
           <span>{env.appName}</span>
         </div>
-        <p>Đặt vé xem phim nhanh chóng, ưu đãi thành viên và lịch chiếu cập nhật liên tục.</p>
-        <small>© {new Date().getFullYear()} {env.appName}. All rights reserved.</small>
+        <p>
+          Đặt vé xem phim nhanh chóng, ưu đãi thành viên và lịch chiếu cập nhật
+          liên tục.
+        </p>
+        <small>
+          © {new Date().getFullYear()} {env.appName}. All rights reserved.
+        </small>
       </footer>
     </div>
-  )
+  );
 }
 
-export default PublicLayout
+export default PublicLayout;
