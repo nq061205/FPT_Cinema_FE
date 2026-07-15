@@ -14,20 +14,20 @@ function PublicLayout() {
         <div className="public-nav-actions">
           {isAuthenticated ? (
             <>
-              <NavLink className="btn btn-outline-light btn-sm" to="/bookings">
-                Lịch sử đặt vé
+              <NavLink className="btn btn-outline-light btn-sm" to="/payment-history">
+                Booking History
               </NavLink>
               <NavLink className="btn btn-danger btn-sm" to="/profile">
-                {user?.fullName ?? user?.email ?? "Tài khoản"}
+                {user?.fullName ?? user?.email ?? "Account"}
               </NavLink>
             </>
           ) : (
             <>
               <NavLink className="btn btn-outline-light btn-sm" to="/login">
-                Đăng nhập
+                Sign in
               </NavLink>
               <NavLink className="btn btn-danger btn-sm" to="/register">
-                Đăng ký
+                Register
               </NavLink>
             </>
           )}
@@ -40,12 +40,10 @@ function PublicLayout() {
 
       <footer className="public-footer">
         <div className="brand">
-          <span className="brand-mark">FC</span>
-          <span>{env.appName}</span>
+          <img src={Logo} alt={env.appName} className="brand-logo" />
         </div>
         <p>
-          Đặt vé xem phim nhanh chóng, ưu đãi thành viên và lịch chiếu cập nhật
-          liên tục.
+          Fast ticket booking, member benefits, and constantly updated showtimes.
         </p>
         <small>
           © {new Date().getFullYear()} {env.appName}. All rights reserved.

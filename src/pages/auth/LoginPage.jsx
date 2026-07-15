@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import ErrorMessage from '../../components/common/ErrorMessage.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
+import { getRoleHome } from '../../lib/roleHome.js'
 
 function LoginPage() {
   const navigate = useNavigate()
@@ -21,8 +22,8 @@ function LoginPage() {
     setError(null)
 
     try {
-      await login(form)
-      const destination = location.state?.from?.pathname ?? '/'
+      const account = await login(form)
+      const destination = location.state?.from?.pathname ?? getRoleHome(account?.role)
       navigate(destination, { replace: true })
     } catch (err) {
       setError(err)

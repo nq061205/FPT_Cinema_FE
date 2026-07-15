@@ -15,3 +15,5 @@ export const USER_STATUSES = ['ACTIVE', 'INACTIVE', 'LOCKED']
 export const REPORT_GROUPS = ['DAY', 'WEEK', 'MONTH', 'YEAR']
 
 export const PAYMENT_METHODS = ['CASH', 'VNPAY']
+
+export const PRODUCT_TYPES = ['FOOD', 'BEVERAGE', 'COMBO']

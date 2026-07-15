@@ -1,61 +1,68 @@
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { adminNavigation, customerNavigation, mainNavigation } from '../config/navigation.js'
-import { env } from '../config/env.js'
-import { useAuth } from '../hooks/useAuth.js'
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { adminNavigation, customerNavigation } from "../config/navigation.js";
+import { env } from "../config/env.js";
+import { useAuth } from "../hooks/useAuth.js";
+import Logo from "../assets/gemini-svg.svg";
 
 function AppLayout() {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const { hasPermission, hasRole, logout, user } = useAuth()
-  const isStaff = hasRole(['ADMIN', 'MANAGER'])
-  const visibleMainLinks = isStaff ? mainNavigation : customerNavigation
+  const navigate = useNavigate();
+  const { hasPermission, hasRole, logout, user } = useAuth();
+  const isStaff = hasRole(["ADMIN", "MANAGER"]);
+  const visibleMainLinks = isStaff ? [] : customerNavigation;
   const visibleAdminLinks = adminNavigation.filter((item) => {
-    return hasRole(item.roles ?? []) && hasPermission(item.permissions ?? [])
-  })
-  const isBookingFlow = location.pathname === '/booking'
+    return hasRole(item.roles ?? []) && hasPermission(item.permissions ?? []);
+  });
 
   async function handleLogout() {
-    await logout()
-    navigate('/login', { replace: true })
+    await logout();
+    navigate("/login", { replace: true });
   }
 
   return (
-    <div className={`app-shell${isBookingFlow ? ' app-shell--booking' : ''}`}>
-      {!isBookingFlow ? (
-        <aside className="sidebar">
-        <NavLink to="/" className="brand">
-          <span className="brand-mark">FC</span>
-          <span>{env.appName}</span>
+    <div className="app-shell">
+      <aside className="sidebar">
+        <NavLink to="/" className="brand" end>
+          <img src={Logo} alt={env.appName} className="brand-logo" />
         </NavLink>
 
-        <nav className="nav-stack" aria-label="Main navigation">
-          {visibleMainLinks.map((item) => (
-            <NavLink key={item.path} to={item.path} end={item.path === '/'}>
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-
-        {visibleAdminLinks.length ? (
-          <nav className="nav-stack nav-stack--admin" aria-label="Admin navigation">
-            <span className="nav-label">Management</span>
-            {visibleAdminLinks.map((item) => (
-              <NavLink key={item.path} to={item.path} end={item.path === '/admin'}>
+        {visibleMainLinks.length ? (
+          <nav className="nav-stack" aria-label="Main navigation">
+            {visibleMainLinks.map((item) => (
+              <NavLink key={item.path} to={item.path} end={item.path === "/"}>
                 {item.label}
               </NavLink>
             ))}
           </nav>
         ) : null}
-        </aside>
-      ) : null}
+
+        {visibleAdminLinks.length ? (
+          <nav
+            className={`nav-stack${visibleMainLinks.length ? " nav-stack--admin" : ""}`}
+            aria-label="Admin navigation"
+          >
+            <span className="nav-label">Management</span>
+            {visibleAdminLinks.map((item) => (
+              <NavLink key={item.path} to={item.path} end={item.end}>
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+        ) : null}
+      </aside>
 
       <div className="workspace">
         <header className="topbar">
           <div>
             <span className="topbar-label">Signed in</span>
-            <strong>{user?.fullName ?? user?.email ?? 'FPT Cinema member'}</strong>
+            <strong>
+              {user?.fullName ?? user?.email ?? "FPT Cinema member"}
+            </strong>
           </div>
-          <button className="btn btn-outline-dark btn-sm" type="button" onClick={handleLogout}>
+          <button
+            className="btn btn-outline-dark btn-sm"
+            type="button"
+            onClick={handleLogout}
+          >
             Sign out
           </button>
         </header>
@@ -65,7 +72,7 @@ function AppLayout() {
         </main>
       </div>
     </div>
-  )
+  );
 }
 
-export default AppLayout
+export default AppLayout;

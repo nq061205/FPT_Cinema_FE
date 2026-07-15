@@ -1,25 +1,25 @@
 import { useCallback, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import BookingInvoiceModal from '../../components/booking/BookingInvoiceModal.jsx'
+import BookingSummaryBar from '../../components/booking/BookingSummaryBar.jsx'
+import ProductPicker from '../../components/booking/ProductPicker.jsx'
+import SeatPicker, { getSeatId, isSeatAvailable } from '../../components/booking/SeatPicker.jsx'
 import DataState from '../../components/common/DataState.jsx'
 import ErrorMessage from '../../components/common/ErrorMessage.jsx'
 import PageHeader from '../../components/common/PageHeader.jsx'
 import { asArray } from '../../lib/collections.js'
 import { formatCurrency, formatDateTime, formatLabel } from '../../lib/formatters.js'
+import { computeDiscount, getPromotion, isPercentType } from '../../lib/promotions.js'
 import { useAsync } from '../../hooks/useAsync.js'
 import { bookingService } from '../../services/booking.service.js'
+import { paymentService } from '../../services/payment.service.js'
 import { productService } from '../../services/product.service.js'
+import { promotionService } from '../../services/promotion.service.js'
 import { seatService } from '../../services/seat.service.js'
 import { showtimeService } from '../../services/showtime.service.js'
 
 const EMPTY_SEATS = []
-
-function getSeatId(seat) {
-  return seat.id ?? seat.seatId ?? null
-}
-
-function isAvailable(seat) {
-  return String(seat.status).toUpperCase() === 'AVAILABLE'
-}
+const STEP_LABELS = { 1: 'Select Seats', 2: 'Select F&B Items', 3: 'Discount Code', 4: 'Payment' }
 
 function BookingFlowPage() {
   const [searchParams] = useSearchParams()
@@ -27,9 +27,14 @@ function BookingFlowPage() {
   const [step, setStep] = useState(1)
   const [selectedSeatIds, setSelectedSeatIds] = useState([])
   const [quantities, setQuantities] = useState({})
+  const [promotion, setPromotion] = useState(null)
   const [error, setError] = useState(null)
-  const [result, setResult] = useState(null)
-  const [submitting, setSubmitting] = useState(false)
+  const [booking, setBooking] = useState(null)
+  const [creating, setCreating] = useState(false)
+  const [paymentMethod] = useState('VNPAY')
+  const [paying, setPaying] = useState(false)
+  const [invoice, setInvoice] = useState(null)
+  const [invoiceOpen, setInvoiceOpen] = useState(false)
 
   const loadBookingData = useCallback(async () => {
     if (!showtimeId || !Number.isInteger(Number(showtimeId)) || Number(showtimeId) < 1) return null
@@ -43,11 +48,17 @@ function BookingFlowPage() {
   }, [showtimeId])
 
   const loadProducts = useCallback(async () => asArray(await productService.list({ page: 0, size: 50 })), [])
+  const loadVouchers = useCallback(async () => asArray(await promotionService.myPromotions()), [])
   const { data, error: loadError, loading } = useAsync(loadBookingData, { initialData: null })
   const { data: products, error: productsError, loading: productsLoading } = useAsync(loadProducts, { initialData: [] })
+  const { data: allVouchers, error: vouchersError, loading: vouchersLoading, execute: refreshVouchers } = useAsync(loadVouchers, { initialData: [] })
+  const vouchers = useMemo(
+    () => allVouchers.filter((voucher) => getPromotion(voucher)?.isActive !== false),
+    [allVouchers],
+  )
   const seats = data?.seatMap?.seats ?? EMPTY_SEATS
   const missingSeatIds = useMemo(
-    () => seats.some((seat) => isAvailable(seat) && getSeatId(seat) === null),
+    () => seats.some((seat) => isSeatAvailable(seat) && getSeatId(seat) === null),
     [seats],
   )
   const selectedProducts = products
@@ -58,11 +69,14 @@ function BookingFlowPage() {
     return total + Number(product?.price ?? 0) * item.quantity
   }, 0)
   const ticketTotal = Number(data?.showtime?.basePrice ?? 0) * selectedSeatIds.length
+  const subtotal = ticketTotal + productTotal
+  const discountAmount = useMemo(() => computeDiscount(promotion, subtotal), [promotion, subtotal])
+  const total = Math.max(0, subtotal - discountAmount)
   const isBookable = String(data?.showtime?.status).toUpperCase() === 'OPEN'
 
   function toggleSeat(seat) {
     const seatId = getSeatId(seat)
-    if (!isAvailable(seat) || seatId === null) return
+    if (!isSeatAvailable(seat) || seatId === null) return
 
     setSelectedSeatIds((current) => (
       current.includes(seatId) ? current.filter((id) => id !== seatId) : [...current, seatId]
@@ -76,106 +90,170 @@ function BookingFlowPage() {
     })
   }
 
-  async function handleSubmit() {
+  function selectPromotion(voucher) {
+    const nextPromotion = getPromotion(voucher)
+    setPromotion((current) => (current?.id === nextPromotion?.id ? null : nextPromotion))
+  }
+
+  async function handleCreateBooking() {
     if (!data?.showtime || !selectedSeatIds.length || !isBookable) return
 
-    setSubmitting(true)
+    setCreating(true)
     setError(null)
     try {
       const created = await bookingService.create({
         showtimeId: data.showtime.id,
         seatIds: selectedSeatIds,
         products: selectedProducts,
-        promotionId: null,
+        promotionId: promotion?.id ?? null,
       })
-      setResult(created)
+      setBooking(created)
     } catch (err) {
       setError(err)
     } finally {
-      setSubmitting(false)
+      setCreating(false)
+    }
+  }
+
+  async function handlePay() {
+    const bookingId = booking?.id
+    setPaying(true)
+    setError(null)
+    try {
+      const paid = await paymentService.process({ bookingId, method: paymentMethod })
+      setInvoice(paid)
+      setInvoiceOpen(true)
+      setPromotion(null)
+      await refreshVouchers()
+    } catch (err) {
+      setError(err)
+    } finally {
+      setPaying(false)
     }
   }
 
   if (!showtimeId) {
     return (
       <section className="page-stack">
-        <PageHeader eyebrow="Checkout" title="Đặt vé" description="Chọn một suất chiếu trước khi đặt vé." />
-        <div className="panel"><Link className="btn btn-danger" to="/showtimes">Xem suất chiếu</Link></div>
+        <PageHeader eyebrow="Checkout" title="Booking" description="Select a showtime before booking tickets" />
+        <div className="panel"><Link className="btn btn-danger" to="/showtimes">View Showtimes</Link></div>
       </section>
     )
   }
 
   return (
     <section className="page-stack">
-      <PageHeader eyebrow="Checkout" title="Đặt vé" description={`Bước ${step}/3: ${step === 1 ? 'Chọn ghế' : step === 2 ? 'Chọn sản phẩm' : 'Xác nhận'}.`} />
+      <PageHeader eyebrow="Checkout" title="Booking" description={`Step ${step}/4: ${STEP_LABELS[step]}.`} />
       <DataState error={loadError} loading={loading}>
         {data ? (
           <div className="page-stack">
-            <div className="panel d-flex flex-wrap align-items-center justify-content-between gap-3 py-3">
-              <div className="d-flex flex-wrap gap-4">
-                <span>Ghế: <strong>{selectedSeatIds.length}</strong></span>
-                <span>Sản phẩm: <strong>{selectedProducts.reduce((total, item) => total + item.quantity, 0)}</strong></span>
-                <span>Tổng tạm tính: <strong>{formatCurrency(ticketTotal + productTotal)}</strong></span>
-              </div>
-              {result ? <span className="text-success">Đặt vé thành công · {result.bookingCode}</span> : null}
-            </div>
+            <BookingSummaryBar
+              seatCount={selectedSeatIds.length}
+              productCount={selectedProducts.reduce((total, item) => total + item.quantity, 0)}
+              subtotal={total}
+              successMessage={invoice ? `Payment successful · ${invoice.bookingCode ?? booking?.bookingCode}` : null}
+            />
             <div className="panel">
               <h2 className="h4">{data.showtime.movieTitle}</h2>
               <p className="muted">{data.seatMap.roomName ?? data.showtime.roomName} · {formatDateTime(data.showtime.startTime)} · {formatCurrency(data.showtime.basePrice)}</p>
-              {!isBookable ? <ErrorMessage error={{ message: `Suất chiếu đang ở trạng thái ${formatLabel(data.showtime.status)}. Chỉ suất có trạng thái OPEN mới đặt được vé.` }} title="Suất chiếu chưa mở bán" /> : null}
+              {!isBookable ? <ErrorMessage error={{ message: `Showtime is currently ${formatLabel(data.showtime.status)}. Only showtimes with status OPEN can be booked.` }} title="Showtime not open for booking" /> : null}
 
               {step === 1 ? (
                 <>
-                  {missingSeatIds ? <ErrorMessage error={{ message: 'API sơ đồ ghế chưa trả về seatId.' }} title="Thiếu dữ liệu ghế" /> : null}
-                  <p className="text-center rounded border bg-light py-2 mb-3">Màn hình</p>
-                  <div className="d-flex flex-wrap gap-2 justify-content-center">
-                    {seats.map((seat) => {
-                      const seatId = getSeatId(seat)
-                      const selected = seatId !== null && selectedSeatIds.includes(seatId)
-                      const available = isAvailable(seat)
-                      return (
-                        <button className={`btn btn-sm ${selected ? 'btn-danger' : available ? 'btn-outline-secondary' : 'btn-secondary'}`} disabled={!available || seatId === null} key={`${seat.seatRow}-${seat.seatNumber}`} onClick={() => toggleSeat(seat)} title={`${formatLabel(seat.seatType)} · ${formatLabel(seat.status)}`} type="button">
-                          {seat.seatRow}{seat.seatNumber}
-                        </button>
-                      )
-                    })}
-                  </div>
-                  <p className="muted mt-3">Đã chọn {selectedSeatIds.length} ghế.</p>
-                  <button className="btn btn-danger" disabled={!selectedSeatIds.length || missingSeatIds} onClick={() => setStep(2)} type="button">Tiếp tục chọn sản phẩm</button>
+                  {missingSeatIds ? <ErrorMessage error={{ message: 'Seat map API did not return seatId.' }} title="Missing seat data" /> : null}
+                  <SeatPicker onToggle={toggleSeat} seats={seats} selectedSeatIds={selectedSeatIds} />
+                  <p className="muted mt-3">Selected {selectedSeatIds.length} seats.</p>
+                  <button className="btn btn-danger" disabled={!selectedSeatIds.length || missingSeatIds} onClick={() => setStep(2)} type="button">Continue</button>
                 </>
               ) : null}
 
               {step === 2 ? (
                 <>
-                  {productsLoading ? <p>Đang tải sản phẩm...</p> : null}
-                  <ErrorMessage error={productsError} title="Không tải được sản phẩm" />
-                  <div className="d-grid gap-2">
-                    {products.map((product) => (
-                      <div className="border rounded p-3 d-flex align-items-center justify-content-between gap-3" key={product.id}>
-                        <div><strong>{product.name}</strong><div className="muted small">{formatCurrency(product.price)}</div></div>
-                        <div className="btn-group">
-                          <button className="btn btn-outline-secondary btn-sm" onClick={() => updateQuantity(product.id, -1)} type="button">−</button>
-                          <span className="btn btn-outline-secondary btn-sm disabled">{quantities[product.id] ?? 0}</span>
-                          <button className="btn btn-outline-secondary btn-sm" onClick={() => updateQuantity(product.id, 1)} type="button">+</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="d-flex gap-2 mt-3"><button className="btn btn-outline-dark" onClick={() => setStep(1)} type="button">Quay lại</button><button className="btn btn-danger" onClick={() => setStep(3)} type="button">Tiếp tục xác nhận</button></div>
+                  {productsLoading ? <p>Loading products...</p> : null}
+                  <ErrorMessage error={productsError} title="Failed to load products" />
+                  <ProductPicker onChangeQuantity={updateQuantity} products={products} quantities={quantities} />
+                  <div className="d-flex gap-2 mt-3"><button className="btn btn-outline-dark" onClick={() => setStep(1)} type="button">Back</button><button className="btn btn-danger" onClick={() => setStep(3)} type="button">Continue</button></div>
                 </>
               ) : null}
 
               {step === 3 ? (
                 <>
-                  <dl className="detail-list"><dt>Ghế</dt><dd>{selectedSeatIds.length}</dd><dt>Tiền vé</dt><dd>{formatCurrency(ticketTotal)}</dd><dt>Sản phẩm</dt><dd>{formatCurrency(productTotal)}</dd><dt>Tổng cộng</dt><dd>{formatCurrency(ticketTotal + productTotal)}</dd></dl>
-                  <div className="d-flex gap-2"><button className="btn btn-outline-dark" onClick={() => setStep(2)} type="button">Quay lại</button><button className="btn btn-danger" disabled={submitting || !isBookable} onClick={handleSubmit} type="button">{submitting ? 'Đang tạo vé...' : 'Xác nhận đặt vé'}</button></div>
+                  {vouchersLoading ? <p>Loading vouchers...</p> : null}
+                  <ErrorMessage error={vouchersError} title="Failed to load vouchers" />
+                  {!vouchersLoading && !vouchers.length ? (
+                    <p className="muted">
+                      You do not have any vouchers yet. Go to <Link to="/vouchers">My voucher</Link> to enter a code and claim one first.
+                    </p>
+                  ) : null}
+                  <div className="d-grid gap-2">
+                    {vouchers.map((voucher) => {
+                      const item = getPromotion(voucher)
+                      const selected = promotion?.id === item.id
+                      return (
+                        <button
+                          className={`border rounded p-3 d-flex align-items-center justify-content-between gap-3 text-start ${selected ? 'border-danger' : ''}`}
+                          key={item.id ?? item.promotionCode}
+                          onClick={() => selectPromotion(voucher)}
+                          type="button"
+                        >
+                          <div>
+                            <strong>{item.name ?? item.promotionCode ?? 'Voucher'}</strong>
+                            <div className="muted small">
+                              Code: {item.promotionCode ?? '-'} ·{' '}
+                              {item.discountValue ? (isPercentType(item.promotionType) ? `${item.discountValue}%` : formatCurrency(item.discountValue)) : '-'}
+                              {' '}· Expiry: {formatDateTime(item.endDate)}
+                            </div>
+                          </div>
+                          <span className="status-pill">{selected ? 'Selected' : 'Select'}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {promotion ? (
+                    <dl className="detail-list mt-3"><dt>Discount</dt><dd>-{formatCurrency(discountAmount)}</dd></dl>
+                  ) : null}
+                  <div className="d-flex gap-2 mt-3"><button className="btn btn-outline-dark" onClick={() => setStep(2)} type="button">Back</button><button className="btn btn-danger" onClick={() => setStep(4)} type="button">Continue to Confirm</button></div>
                 </>
               ) : null}
-              {error ? <div className="mt-3"><ErrorMessage error={error} title="Đặt vé thất bại" /></div> : null}
+
+              {step === 4 ? (
+                <>
+                  <dl className="detail-list"><dt>Seats</dt><dd>{selectedSeatIds.length}</dd><dt>Ticket Total</dt><dd>{formatCurrency(ticketTotal)}</dd><dt>F&B Items</dt><dd>{formatCurrency(productTotal)}</dd><dt>Discount</dt><dd>-{formatCurrency(discountAmount)}</dd><dt>Total</dt><dd>{formatCurrency(total)}</dd></dl>
+
+                  {!booking ? (
+                    <div className="d-flex gap-2 mt-3">
+                      <button className="btn btn-outline-dark" onClick={() => setStep(3)} type="button">Back</button>
+                      <button className="btn btn-danger" disabled={creating || !isBookable} onClick={handleCreateBooking} type="button">
+                        {creating ? 'Reserving seats...' : 'Reserve Seats'}
+                      </button>
+                    </div>
+                  ) : !invoice ? (
+                    <>
+                      <p className="muted mt-3">
+                        Seats reserved: {booking.bookingCode}. Please complete payment before {formatDateTime(booking.expiresAt)}.
+                      </p>
+                      <p className="muted">Payment via VNPay.</p>
+                      <button className="btn btn-danger mt-3" disabled={paying} onClick={handlePay} type="button">
+                        {paying ? 'Processing...' : 'Confirm Payment'}
+                      </button>
+                    </>
+                  ) : (
+                    <div className="d-flex gap-2 align-items-center mt-3">
+                      <div className="alert alert-success mb-0">Payment successful · {invoice.paymentCode}</div>
+                      <button className="btn btn-outline-dark btn-sm" onClick={() => setInvoiceOpen(true)} type="button">View Invoice</button>
+                    </div>
+                  )}
+                </>
+              ) : null}
+              {error ? <div className="mt-3"><ErrorMessage error={error} title="Operation failed" /></div> : null}
             </div>
           </div>
         ) : null}
       </DataState>
+
+      {invoiceOpen && invoice ? (
+        <BookingInvoiceModal booking={invoice} onClose={() => setInvoiceOpen(false)} />
+      ) : null}
     </section>
   )
 }
