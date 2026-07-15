@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import ErrorMessage from '../../components/common/ErrorMessage.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
@@ -11,6 +11,13 @@ function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [notice] = useState(
+    () => location.state?.notice ?? window.sessionStorage.getItem('auth_notice') ?? '',
+  )
+
+  useEffect(() => {
+    window.sessionStorage.removeItem('auth_notice')
+  }, [])
 
   function updateField(event) { setForm((current) => ({ ...current, [event.target.name]: event.target.value })) }
 
@@ -39,6 +46,8 @@ function LoginPage() {
         <span className="eyebrow">Welcome back</span>
         <h2>Sign in</h2>
       </div>
+
+      {notice ? <div className="alert alert-success">{notice}</div> : null}
 
       <ErrorMessage error={error} title="Login failed" />
 

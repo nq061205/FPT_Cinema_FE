@@ -17,11 +17,14 @@ import { productService } from '../../services/product.service.js'
 import { promotionService } from '../../services/promotion.service.js'
 import { seatService } from '../../services/seat.service.js'
 import { showtimeService } from '../../services/showtime.service.js'
+import { useAuth } from '../../hooks/useAuth.js'
 
 const EMPTY_SEATS = []
 const STEP_LABELS = { 1: 'Chọn Ghế', 2: 'Chọn Bắp Nước', 3: 'Khuyến Mãi', 4: 'Thanh Toán' }
 
 function BookingFlowPage() {
+  const { hasRole, user } = useAuth()
+  const isStaff = hasRole(['STAFF', 'ADMIN'])
   const [searchParams] = useSearchParams()
   const showtimeId = searchParams.get('showtimeId')
   const [step, setStep] = useState(1)
@@ -38,11 +41,11 @@ function BookingFlowPage() {
   const [creating, setCreating] = useState(false)
   const [payment, setPayment] = useState(null)
   const [paymentError, setPaymentError] = useState(null)
-  const [paymentMethod, setPaymentMethod] = useState('VNPAY')
   const [bankCode, setBankCode] = useState('VNBANK')
   const [paying, setPaying] = useState(false)
   const [invoice, setInvoice] = useState(null)
   const [invoiceOpen, setInvoiceOpen] = useState(false)
+  const [payError, setPayError] = useState(null)
 
   const loadBookingData = useCallback(async () => {
     if (!showtimeId || !Number.isInteger(Number(showtimeId)) || Number(showtimeId) < 1) return null
@@ -166,33 +169,37 @@ function BookingFlowPage() {
     }
   }
 
-  async function handlePayment(event) {
-    event?.preventDefault()
-    if (!booking?.bookingCode) return
+  async function handlePayVnpay(event) {
+  event.preventDefault()
 
-    setPaying(true)
-    setPaymentError(null)
-    try {
-      const createdPayment = await paymentService.create({
-        bookingCode: booking.bookingCode,
-        method: paymentMethod,
-        bankCode: paymentMethod === 'VNPAY' ? bankCode : null,
-      })
-      setPayment(createdPayment)
+  if (!booking?.bookingCode) return
 
-      if (createdPayment?.paymentUrl) {
-        window.location.assign(createdPayment.paymentUrl)
-      } else {
-        // Fallback in case of mock payment returning directly
-        setInvoice(createdPayment)
-        setInvoiceOpen(true)
-      }
-    } catch (err) {
-      setPaymentError(err)
-    } finally {
-      setPaying(false)
+  setPaying(true)
+  setPaymentError(null)
+
+  try {
+    const payment = await paymentService.createOnline({
+      bookingCode: booking.bookingCode,
+      method: 'VNPAY',
+      bankCode,
+    })
+
+    setPayment(payment)
+
+    if (payment?.paymentUrl) {
+      window.location.assign(payment.paymentUrl)
+      return
     }
+
+    setPaymentError({
+      message: 'Không nhận được liên kết thanh toán.',
+    })
+  } catch (err) {
+    setPaymentError(err)
+  } finally {
+    setPaying(false)
   }
+}
 
   if (!showtimeId) {
     return (
@@ -315,21 +322,7 @@ function BookingFlowPage() {
                       <h3 className="h5">Thanh toán</h3>
                       <p className="muted">Mã vé: <strong>{booking.bookingCode}</strong>. Vui lòng hoàn tất thanh toán trước {formatDateTime(booking.expiresAt)}.</p>
                       
-                      <form className="form-row align-items-end" onSubmit={handlePayment}>
-                        <label className="form-label">
-                          Phương thức
-                          <select className="form-select" value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)}>
-                            <option value="VNPAY">VNPay online</option>
-                          </select>
-                        </label>
-                        <label className="form-label">
-                          Ngân hàng
-                          <select className="form-select" value={bankCode} onChange={(event) => setBankCode(event.target.value)}>
-                            <option value="VNBANK">Ngân hàng nội địa</option>
-                            <option value="NCB">NCB</option>
-                            <option value="VNPAYQR">VNPay QR</option>
-                          </select>
-                        </label>
+                      <form className="form-row align-items-end" onSubmit={handlePayVnpay}>
                         <button className="btn btn-danger" type="submit" disabled={paying}>
                           {paying ? 'Đang khởi tạo...' : 'Thanh toán ngay'}
                         </button>

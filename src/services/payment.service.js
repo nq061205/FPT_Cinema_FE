@@ -8,7 +8,7 @@ import { apiClient } from '../lib/apiClient.js'
  * the staff payment desk and are protected by the backend's STAFF role.
  */
 export const paymentService = {
-  create: (payload) => apiClient.post('/payment/create', payload),
+  createOnline: (payload) => apiClient.post('/payment/create', payload),
   cash: (payload) => apiClient.post('/payment/cash', payload),
   confirm: (payload) => apiClient.post('/payment/cash/confirm', payload),
   get: (paymentCode) => apiClient.get(`/payment/${encodeURIComponent(paymentCode)}`),
