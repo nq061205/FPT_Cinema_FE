@@ -21,8 +21,7 @@ import BookingFlowPage from '../pages/booking/BookingFlowPage.jsx'
 import BookingHistoryPage from '../pages/booking/BookingHistoryPage.jsx'
 import MovieDetailPage from '../pages/movies/MovieDetailPage.jsx'
 import MovieListPage from '../pages/movies/MovieListPage.jsx'
-import PaymentHistoryPage from '../pages/payment/PaymentHistoryPage.jsx'
-import PaymentDeskPage from '../pages/payment/PaymentDeskPage.jsx'
+import PaymentReturnPage from '../pages/payment/PaymentReturnPage.jsx'
 import PaymentResultPage from '../pages/payment/PaymentResultPage.jsx'
 import ProfilePage from '../pages/profile/ProfilePage.jsx'
 import VoucherPage from '../pages/promotions/VoucherPage.jsx'
@@ -63,7 +62,7 @@ function App() {
               <Route path="bookings" element={<BookingHistoryPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="vouchers" element={<VoucherPage />} />
-              <Route path="payment-history" element={<PaymentHistoryPage />} />
+              <Route path="payment/return" element={<PaymentReturnPage />} />
               <Route path="support" element={<SupportChatPage />} />
 
               <Route element={<ProtectedRoute roles={['ADMIN', 'MANAGER']} />}>
@@ -81,9 +80,7 @@ function App() {
                 <Route path="admin/access" element={<AccessManagementPage />} />
               </Route>
 
-              <Route element={<ProtectedRoute roles={['STAFF']} />}>
-                <Route path="admin/payments" element={<PaymentDeskPage />} />
-              </Route>
+
 
               <Route element={<ProtectedRoute permissions={['USER_VIEW_LIST']} roles={['ADMIN']} />}>
                 <Route path="admin/users" element={<UserManagementPage />} />
