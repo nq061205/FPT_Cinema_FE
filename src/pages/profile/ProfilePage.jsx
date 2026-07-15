@@ -54,6 +54,11 @@ function ProfilePage() {
     setActionError(null);
     setMessage("");
 
+    if (!form.fullName.trim() || !/^[0-9]{9,15}$/.test(form.phone.trim())) {
+      setActionError(new Error('Full name is required and phone must contain 9 to 15 digits.'))
+      return
+    }
+
     try {
       const updated = await profileService.update(form);
       setData(updated);
@@ -67,6 +72,15 @@ function ProfilePage() {
     event.preventDefault();
     setActionError(null);
     setMessage("");
+
+    if (passwordForm.newPassword.length < 8) {
+      setActionError(new Error('New password must contain at least 8 characters.'))
+      return
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmNewPassword) {
+      setActionError(new Error('New password and confirmation do not match.'))
+      return
+    }
 
     try {
       await profileService.changePassword(passwordForm);
@@ -106,6 +120,8 @@ function ProfilePage() {
               name="fullName"
               value={form.fullName}
               onChange={updateProfileField}
+              required
+              maxLength="100"
             />
           </label>
 
@@ -114,8 +130,12 @@ function ProfilePage() {
             <input
               className="form-control"
               name="phone"
+              inputMode="numeric"
+              pattern="[0-9]{9,15}"
+              title="Phone must contain 9 to 15 digits"
               value={form.phone}
               onChange={updateProfileField}
+              required
             />
           </label>
 
@@ -146,6 +166,7 @@ function ProfilePage() {
               type="password"
               value={passwordForm.oldPassword}
               onChange={updatePasswordField}
+              required
             />
           </label>
 
@@ -155,8 +176,11 @@ function ProfilePage() {
               className="form-control"
               name="newPassword"
               type="password"
+              minLength="8"
+              maxLength="100"
               value={passwordForm.newPassword}
               onChange={updatePasswordField}
+              required
             />
           </label>
 
@@ -166,8 +190,11 @@ function ProfilePage() {
               className="form-control"
               name="confirmNewPassword"
               type="password"
+              minLength="8"
+              maxLength="100"
               value={passwordForm.confirmNewPassword}
               onChange={updatePasswordField}
+              required
             />
           </label>
 

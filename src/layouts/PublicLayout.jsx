@@ -1,7 +1,9 @@
 import { NavLink, Outlet } from "react-router-dom";
+import ChatbotWidget from "../components/chat/ChatbotWidget.jsx";
 import { env } from "../config/env.js";
 import { useAuth } from "../hooks/useAuth.js";
 import Logo from "../assets/gemini-svg.svg";
+
 function PublicLayout() {
   const { isAuthenticated, user } = useAuth();
 
@@ -49,6 +51,8 @@ function PublicLayout() {
           © {new Date().getFullYear()} {env.appName}. All rights reserved.
         </small>
       </footer>
+
+      <ChatbotWidget />
     </div>
   );
 }

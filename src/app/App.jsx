@@ -6,11 +6,14 @@ import PublicLayout from '../layouts/PublicLayout.jsx'
 import StaffLayout from '../layouts/StaffLayout.jsx'
 import ProtectedRoute from '../components/common/ProtectedRoute.jsx'
 import RoleHomeGuard from '../components/common/RoleHomeGuard.jsx'
+import AccessManagementPage from '../pages/admin/AccessManagementPage.jsx'
+import AdminDashboardPage from '../pages/admin/AdminDashboardPage.jsx'
 import MovieManagementPage from '../pages/admin/MovieManagementPage.jsx'
 import ProductManagementPage from '../pages/admin/ProductManagementPage.jsx'
 import RefundManagementPage from '../pages/admin/RefundManagementPage.jsx'
 import ReportsPage from '../pages/admin/ReportsPage.jsx'
 import RoomManagementPage from '../pages/admin/RoomManagementPage.jsx'
+import SeatManagementPage from '../pages/admin/SeatManagementPage.jsx'
 import ShowtimeManagementPage from '../pages/admin/ShowtimeManagementPage.jsx'
 import UserManagementPage from '../pages/admin/UserManagementPage.jsx'
 import LoginPage from '../pages/auth/LoginPage.jsx'
@@ -20,6 +23,8 @@ import BookingHistoryPage from '../pages/booking/BookingHistoryPage.jsx'
 import MovieDetailPage from '../pages/movies/MovieDetailPage.jsx'
 import MovieListPage from '../pages/movies/MovieListPage.jsx'
 import PaymentHistoryPage from '../pages/payment/PaymentHistoryPage.jsx'
+import PaymentDeskPage from '../pages/payment/PaymentDeskPage.jsx'
+import PaymentResultPage from '../pages/payment/PaymentResultPage.jsx'
 import ProfilePage from '../pages/profile/ProfilePage.jsx'
 import VoucherPage from '../pages/promotions/VoucherPage.jsx'
 import DashboardPage from '../pages/public/DashboardPage.jsx'
@@ -51,6 +56,8 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
           </Route>
 
+          <Route path="/payment/result" element={<PaymentResultPage />} />
+
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route path="dashboard" element={<DashboardPage />} />
@@ -61,15 +68,22 @@ function App() {
               <Route path="support" element={<SupportChatPage />} />
 
               <Route element={<ProtectedRoute roles={['ADMIN', 'MANAGER']} />}>
+                <Route path="admin" element={<AdminDashboardPage />} />
+                <Route path="admin/rooms" element={<RoomManagementPage />} />
+                <Route path="admin/rooms/:roomId/seats" element={<SeatManagementPage />} />
+                <Route path="admin/products" element={<ProductManagementPage />} />
                 <Route path="admin/movies" element={<MovieManagementPage />} />
                 <Route path="admin/showtimes" element={<ShowtimeManagementPage />} />
-                <Route path="admin/products" element={<ProductManagementPage />} />
                 <Route path="admin/reports" element={<ReportsPage />} />
                 <Route path="admin/refunds" element={<RefundManagementPage />} />
               </Route>
 
               <Route element={<ProtectedRoute roles={['ADMIN']} />}>
-                <Route path="admin/rooms" element={<RoomManagementPage />} />
+                <Route path="admin/access" element={<AccessManagementPage />} />
+              </Route>
+
+              <Route element={<ProtectedRoute roles={['STAFF']} />}>
+                <Route path="admin/payments" element={<PaymentDeskPage />} />
               </Route>
 
               <Route element={<ProtectedRoute permissions={['USER_VIEW_LIST']} roles={['ADMIN']} />}>

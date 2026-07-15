@@ -12,9 +12,7 @@ function LoginPage() {
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
-  function updateField(event) {
-    setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
-  }
+  function updateField(event) { setForm((current) => ({ ...current, [event.target.name]: event.target.value })) }
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -23,7 +21,10 @@ function LoginPage() {
 
     try {
       const account = await login(form)
-      const destination = location.state?.from?.pathname ?? getRoleHome(account?.role)
+      const from = location.state?.from
+      const destination = from
+        ? `${from.pathname}${from.search ?? ''}${from.hash ?? ''}`
+        : getRoleHome(account?.role)
       navigate(destination, { replace: true })
     } catch (err) {
       setError(err)

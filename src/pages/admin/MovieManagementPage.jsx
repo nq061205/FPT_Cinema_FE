@@ -155,6 +155,9 @@ function MovieManagementPage() {
         actions={<Link className="btn btn-outline-dark" to="/admin/reports">View revenue / statistics</Link>}
       />
 
+      {/* TODO: xóa cảnh báo này sau khi xác nhận movieService.updateStatus đã có API backend tương ứng */}
+      <div className="alert alert-info">Backend hiện tạo phim mới ở trạng thái COMING_SOON; xác nhận API đổi status/release date đã sẵn sàng trước khi dùng các nút đổi trạng thái bên dưới.</div>
+
       <ErrorMessage error={actionError} />
 
       <form className="panel form-grid" onSubmit={handleSubmit}>

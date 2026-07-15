@@ -1,7 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { env } from '../config/env.js'
 import { useAuth } from '../hooks/useAuth.js'
-import { getRoleHome } from '../lib/roleHome.js'
+import { getDefaultRouteForUser } from '../lib/authRouting.js'
 import LoadingScreen from '../components/common/LoadingScreen.jsx'
 import Logo from '../assets/gemini-svg.svg'
 
@@ -9,7 +9,7 @@ function AuthLayout() {
   const { bootstrapping, isAuthenticated, user } = useAuth()
 
   if (bootstrapping) return <LoadingScreen />
-  if (isAuthenticated) return <Navigate to={getRoleHome(user?.role)} replace />
+  if (isAuthenticated) return <Navigate to={getDefaultRouteForUser(user)} replace />
 
   return (
     <main className="auth-shell">
