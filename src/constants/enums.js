@@ -8,6 +8,8 @@ export const SEAT_TYPES = ['NORMAL', 'VIP', 'COUPLE', 'PREMIUM']
 
 export const SEAT_STATUSES = ['ACTIVE', 'LOCKED', 'BROKEN']
 
+export const ROOM_TYPES = ['STANDARD', 'VIP', 'IMAX', 'FOUR_DX', 'DOLBY']
+
 export const BOOKING_STATUSES = ['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED']
 
 export const USER_STATUSES = ['ACTIVE', 'INACTIVE', 'LOCKED']

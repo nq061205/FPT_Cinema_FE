@@ -9,4 +9,6 @@ export const showtimeService = {
   cancel: (id) => apiClient.delete(`/showtimes/${id}`),
   seatMap: (id) => apiClient.get(`/showtimes/${id}/seats`),
   listCompact: (payload = { page: 0, size: 5 }) => apiClient.post('/showtimes/list', payload),
+  quickList: (branchId = 1, params = {}) =>
+    apiClient.get(`/v1/branches/${encodeURIComponent(branchId)}/showtimes/quick`, { params }),
 }

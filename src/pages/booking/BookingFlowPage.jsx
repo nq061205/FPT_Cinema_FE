@@ -7,6 +7,8 @@ import { asArray } from '../../lib/collections.js'
 import { formatCurrency, formatDateTime, formatLabel } from '../../lib/formatters.js'
 import { useAsync } from '../../hooks/useAsync.js'
 import { bookingService } from '../../services/booking.service.js'
+import { paymentService } from '../../services/payment.service.js'
+import { promotionService } from '../../services/promotion.service.js'
 import { productService } from '../../services/product.service.js'
 import { seatService } from '../../services/seat.service.js'
 import { showtimeService } from '../../services/showtime.service.js'
@@ -27,8 +29,16 @@ function BookingFlowPage() {
   const [step, setStep] = useState(1)
   const [selectedSeatIds, setSelectedSeatIds] = useState([])
   const [quantities, setQuantities] = useState({})
+  const [promotionId, setPromotionId] = useState('')
+  const [promotionDetail, setPromotionDetail] = useState(null)
+  const [promotionError, setPromotionError] = useState(null)
   const [error, setError] = useState(null)
   const [result, setResult] = useState(null)
+  const [payment, setPayment] = useState(null)
+  const [paymentError, setPaymentError] = useState(null)
+  const [paymentMethod, setPaymentMethod] = useState('VNPAY')
+  const [bankCode, setBankCode] = useState('VNBANK')
+  const [paying, setPaying] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   const loadBookingData = useCallback(async () => {
@@ -39,7 +49,29 @@ function BookingFlowPage() {
       seatService.viewMap({ showtimeId: Number(showtimeId) }),
     ])
 
-    return { showtime, seatMap: { ...seatMap, seats: asArray(seatMap?.seats) } }
+    // /api/seat/list currently returns row/number but omits seatId. Fetch the
+    // room seat endpoint as well and merge IDs so /booking/create can receive
+    // the required seatIds without changing the backend contract.
+    const roomId = seatMap?.roomId ?? showtime?.roomId
+    let roomSeats = []
+    if (roomId) {
+      try {
+        roomSeats = asArray(await seatService.getByRoom(roomId, { size: 500 }))
+      } catch {
+        // Keep the visual map usable; the page will clearly report missing
+        // seat IDs and prevent submitting an invalid booking.
+        roomSeats = []
+      }
+    }
+    const idsByPosition = new Map(
+      roomSeats.map((seat) => [`${seat.seatRow}-${seat.seatNumber}`, seat.id]),
+    )
+    const seats = asArray(seatMap?.seats).map((seat) => ({
+      ...seat,
+      id: seat.id ?? seat.seatId ?? idsByPosition.get(`${seat.seatRow}-${seat.seatNumber}`),
+    }))
+
+    return { showtime, seatMap: { ...seatMap, seats } }
   }, [showtimeId])
 
   const loadProducts = useCallback(async () => asArray(await productService.list({ page: 0, size: 50 })), [])
@@ -77,7 +109,7 @@ function BookingFlowPage() {
   }
 
   async function handleSubmit() {
-    if (!data?.showtime || !selectedSeatIds.length || !isBookable) return
+    if (!data?.showtime || !selectedSeatIds.length || !isBookable || result) return
 
     setSubmitting(true)
     setError(null)
@@ -86,13 +118,53 @@ function BookingFlowPage() {
         showtimeId: data.showtime.id,
         seatIds: selectedSeatIds,
         products: selectedProducts,
-        promotionId: null,
+        promotionId: promotionId ? Number(promotionId) : null,
       })
       setResult(created)
+      setPayment(null)
+      setPaymentError(null)
     } catch (err) {
       setError(err)
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  async function previewPromotion() {
+    if (!promotionId) return
+    setPromotionError(null)
+    try {
+      setPromotionDetail(await promotionService.detail(Number(promotionId)))
+    } catch (err) {
+      setPromotionDetail(null)
+      setPromotionError(err)
+    }
+  }
+
+  async function handlePayment(event) {
+    event.preventDefault()
+    if (!result?.bookingCode) return
+
+    setPaying(true)
+    setPaymentError(null)
+    try {
+      const createdPayment = await paymentService.create({
+        bookingCode: result.bookingCode,
+        method: paymentMethod,
+        bankCode: paymentMethod === 'VNPAY' ? bankCode : null,
+      })
+      setPayment(createdPayment)
+
+      // The backend returns a signed VNPay URL. Redirect only after the
+      // response has been stored so users still see a useful status when the
+      // sandbox is not configured.
+      if (createdPayment?.paymentUrl) {
+        window.location.assign(createdPayment.paymentUrl)
+      }
+    } catch (err) {
+      setPaymentError(err)
+    } finally {
+      setPaying(false)
     }
   }
 
@@ -161,6 +233,12 @@ function BookingFlowPage() {
                       </div>
                     ))}
                   </div>
+                  <div className="form-row mt-3 align-items-end">
+                    <label className="form-label">Promotion ID (optional)<input className="form-control" type="number" min="1" value={promotionId} onChange={(event) => setPromotionId(event.target.value)} /></label>
+                    <button className="btn btn-outline-dark" type="button" onClick={previewPromotion} disabled={!promotionId}>Check promotion</button>
+                  </div>
+                  {promotionDetail ? <p className="text-success small mb-0">{promotionDetail.name} · {formatLabel(promotionDetail.promotionType)} · {promotionDetail.discountValue}</p> : null}
+                  <ErrorMessage error={promotionError} title="Promotion unavailable" />
                   <div className="d-flex gap-2 mt-3"><button className="btn btn-outline-dark" onClick={() => setStep(1)} type="button">Quay lại</button><button className="btn btn-danger" onClick={() => setStep(3)} type="button">Tiếp tục xác nhận</button></div>
                 </>
               ) : null}
@@ -168,10 +246,38 @@ function BookingFlowPage() {
               {step === 3 ? (
                 <>
                   <dl className="detail-list"><dt>Ghế</dt><dd>{selectedSeatIds.length}</dd><dt>Tiền vé</dt><dd>{formatCurrency(ticketTotal)}</dd><dt>Sản phẩm</dt><dd>{formatCurrency(productTotal)}</dd><dt>Tổng cộng</dt><dd>{formatCurrency(ticketTotal + productTotal)}</dd></dl>
-                  <div className="d-flex gap-2"><button className="btn btn-outline-dark" onClick={() => setStep(2)} type="button">Quay lại</button><button className="btn btn-danger" disabled={submitting || !isBookable} onClick={handleSubmit} type="button">{submitting ? 'Đang tạo vé...' : 'Xác nhận đặt vé'}</button></div>
+                  <div className="d-flex gap-2"><button className="btn btn-outline-dark" onClick={() => setStep(2)} type="button" disabled={Boolean(result)}>Quay lại</button><button className="btn btn-danger" disabled={submitting || !isBookable || Boolean(result)} onClick={handleSubmit} type="button">{submitting ? 'Đang tạo vé...' : result ? 'Đã tạo booking' : 'Xác nhận đặt vé'}</button></div>
                 </>
               ) : null}
               {error ? <div className="mt-3"><ErrorMessage error={error} title="Đặt vé thất bại" /></div> : null}
+
+              {result ? (
+                <section className="border-top mt-4 pt-4">
+                  <h3 className="h5">Thanh toán</h3>
+                  <p className="muted">Booking đang chờ thanh toán. Bạn có thể tiếp tục với cổng VNPay.</p>
+                  <form className="form-row align-items-end" onSubmit={handlePayment}>
+                    <label className="form-label">
+                      Phương thức
+                      <select className="form-select" value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)}>
+                        <option value="VNPAY">VNPay online</option>
+                      </select>
+                    </label>
+                    <label className="form-label">
+                      Ngân hàng
+                      <select className="form-select" value={bankCode} onChange={(event) => setBankCode(event.target.value)}>
+                        <option value="VNBANK">Ngân hàng nội địa</option>
+                        <option value="NCB">NCB</option>
+                        <option value="VNPAYQR">VNPay QR</option>
+                      </select>
+                    </label>
+                    <button className="btn btn-danger" type="submit" disabled={paying}>
+                      {paying ? 'Đang khởi tạo...' : 'Thanh toán ngay'}
+                    </button>
+                  </form>
+                  {payment ? <p className="text-success mt-3 mb-0">Mã thanh toán: {payment.paymentCode} · {formatLabel(payment.status)}</p> : null}
+                  <ErrorMessage error={paymentError} title="Khởi tạo thanh toán thất bại" />
+                </section>
+              ) : null}
             </div>
           </div>
         ) : null}

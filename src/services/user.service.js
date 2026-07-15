@@ -10,6 +10,7 @@ export const userService = {
   create: (payload) => apiClient.post('/user/create', payload),
   list: () => apiClient.get('/user/user-list'),
   getById: (id) => apiClient.get(`/user/${id}`),
+  getPermissions: (id) => apiClient.get(`/user/${id}/permissions`),
   update: (id, payload) => apiClient.put(`/user/${id}`, payload),
   assignPermission: (userId, permissionId, payload = null) =>
     apiClient.put(`/user/${userId}/permissions/${permissionId}`, payload),
@@ -17,7 +18,15 @@ export const userService = {
 }
 
 export const permissionService = {
+  list: () => apiClient.get('/permissions'),
   create: (payload) => apiClient.post('/permissions', payload),
   update: (id, payload) => apiClient.put(`/permissions/${id}`, payload),
+  rolePermissions: (roleId) => apiClient.get(`/roles/${roleId}/permissions`),
   assignToRole: (roleId, permissionId) => apiClient.put(`/roles/${roleId}/permissions/${permissionId}`),
+  replaceRolePermissions: (roleId, permissionIds) => apiClient.put(`/roles/${roleId}/permissions`, { permissionIds }),
+}
+
+export const roleService = {
+  list: () => apiClient.get('/roles'),
+  getById: (id) => apiClient.get(`/roles/${id}`),
 }

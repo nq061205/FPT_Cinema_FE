@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import ChatbotWidget from '../components/chat/ChatbotWidget.jsx'
 import { env } from '../config/env.js'
 import { useAuth } from '../hooks/useAuth.js'
 
@@ -48,6 +49,8 @@ function PublicLayout() {
         <p>Đặt vé xem phim nhanh chóng, ưu đãi thành viên và lịch chiếu cập nhật liên tục.</p>
         <small>© {new Date().getFullYear()} {env.appName}. All rights reserved.</small>
       </footer>
+
+      <ChatbotWidget />
     </div>
   )
 }

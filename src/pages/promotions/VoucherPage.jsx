@@ -1,5 +1,6 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import DataState from '../../components/common/DataState.jsx'
+import ErrorMessage from '../../components/common/ErrorMessage.jsx'
 import PageHeader from '../../components/common/PageHeader.jsx'
 import { asArray } from '../../lib/collections.js'
 import { formatDateTime, formatLabel } from '../../lib/formatters.js'
@@ -8,11 +9,58 @@ import { promotionService } from '../../services/promotion.service.js'
 
 function VoucherPage() {
   const loadVouchers = useCallback(async () => asArray(await promotionService.myPromotions()), [])
-  const { data: vouchers, error, loading } = useAsync(loadVouchers, { initialData: [] })
+  const { data: vouchers, error, loading, execute } = useAsync(loadVouchers, { initialData: [] })
+  const [promotionId, setPromotionId] = useState('')
+  const [promotionDetail, setPromotionDetail] = useState(null)
+  const [actionError, setActionError] = useState(null)
+  const [message, setMessage] = useState('')
+  const [acting, setActing] = useState(false)
+
+  async function viewPromotion(event) {
+    event.preventDefault()
+    setActionError(null)
+    setMessage('')
+    setActing(true)
+    try {
+      setPromotionDetail(await promotionService.detail(Number(promotionId)))
+    } catch (err) {
+      setActionError(err)
+    } finally {
+      setActing(false)
+    }
+  }
+
+  async function applyPromotion() {
+    setActionError(null)
+    setMessage('')
+    const confirmed = window.confirm('Backend sẽ đánh dấu voucher này là ĐÃ DÙNG ngay lập tức. Chỉ tiếp tục nếu bạn thực sự muốn tiêu voucher ngoài bước đặt vé. Bạn có chắc không?')
+    if (!confirmed) return
+    setActing(true)
+    try {
+      const applied = await promotionService.apply(Number(promotionId))
+      setMessage(`Đã áp dụng: ${applied?.name ?? 'khuyến mãi'}`)
+      await execute()
+    } catch (err) {
+      setActionError(err)
+    } finally {
+      setActing(false)
+    }
+  }
 
   return (
     <section className="page-stack">
       <PageHeader eyebrow="Account" title="My voucher" description="Ưu đãi và mã giảm giá bạn đang sở hữu." />
+      <ErrorMessage error={actionError} />
+      {message ? <div className="alert alert-success">{message}</div> : null}
+
+      <div className="alert alert-info mb-0">Backend hiện chỉ trả về User promotion ID trong danh sách; Promotion ID cần lấy từ dữ liệu quản trị để xem/áp dụng.</div>
+
+      <form className="panel form-row align-items-end" onSubmit={viewPromotion}>
+        <label className="form-label">Promotion ID<input className="form-control" type="number" min="1" value={promotionId} onChange={(event) => setPromotionId(event.target.value)} required /></label>
+        <button className="btn btn-outline-dark" type="submit" disabled={acting}>{acting ? 'Loading...' : 'View detail'}</button>
+        <button className="btn btn-outline-danger" type="button" disabled={acting || !promotionDetail} onClick={applyPromotion}>Đánh dấu đã dùng (API)</button>
+      </form>
+      {promotionDetail ? <article className="panel"><dl className="detail-list"><dt>Name</dt><dd>{promotionDetail.name}</dd><dt>Type</dt><dd>{formatLabel(promotionDetail.promotionType)}</dd><dt>Value</dt><dd>{promotionDetail.discountValue}</dd><dt>Status</dt><dd>{promotionDetail.isActive ? 'Active' : 'Inactive'}</dd></dl></article> : null}
 
       <DataState
         data={vouchers}
@@ -23,24 +71,20 @@ function VoucherPage() {
       >
         <div className="module-grid">
           {vouchers.map((voucher) => (
-            <article className="module-card" key={voucher.id ?? voucher.code}>
-              <h2>{voucher.title ?? voucher.name ?? voucher.code ?? 'Voucher'}</h2>
-              <p>{voucher.description ?? formatLabel(voucher.discountType)}</p>
+            <article className="module-card" key={voucher.userPromotionId ?? voucher.id}>
+              <h2>{voucher.promotion?.name ?? voucher.title ?? voucher.name ?? 'Voucher'}</h2>
+              <p>{formatLabel(voucher.promotion?.promotionType ?? voucher.discountType)}</p>
               <dl className="detail-list">
-                <dt>Mã</dt>
-                <dd>{voucher.code ?? '-'}</dd>
+                <dt>User promotion ID</dt>
+                <dd>{voucher.userPromotionId ?? '-'}</dd>
                 <dt>Giảm giá</dt>
                 <dd>
-                  {voucher.discountPercent
-                    ? `${voucher.discountPercent}%`
-                    : voucher.discountAmount
-                      ? `${voucher.discountAmount}đ`
-                      : '-'}
+                  {voucher.promotion?.discountValue ?? '-'}
                 </dd>
-                <dt>Hết hạn</dt>
-                <dd>{formatDateTime(voucher.validTo ?? voucher.expiryDate)}</dd>
+                <dt>Nhận lúc</dt>
+                <dd>{formatDateTime(voucher.assignedAt)}</dd>
                 <dt>Trạng thái</dt>
-                <dd><span className="status-pill">{formatLabel(voucher.status)}</span></dd>
+                <dd><span className="status-pill">{formatLabel(voucher.status ?? (voucher.promotion?.isActive ? 'ACTIVE' : 'INACTIVE'))}</span></dd>
               </dl>
             </article>
           ))}

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import ErrorMessage from '../../components/common/ErrorMessage.jsx'
 import PageHeader from '../../components/common/PageHeader.jsx'
-import { PAYMENT_METHODS, REPORT_GROUPS } from '../../constants/enums.js'
+import { BOOKING_STATUSES, MOVIE_STATUSES, PAYMENT_METHODS, REPORT_GROUPS, USER_STATUSES } from '../../constants/enums.js'
 import { reportService } from '../../services/report.service.js'
 
 const reportTypes = ['booking', 'payment', 'revenue', 'customer', 'promotion', 'movie']
@@ -14,6 +14,15 @@ function ReportsPage() {
     groupBy: 'DAY',
     paymentMethod: '',
     completedBookingsOnly: true,
+    paymentStatus: '',
+    statuses: [],
+    channels: [],
+    movieId: '',
+    membershipLevel: '',
+    userStatus: '',
+    promotionCode: '',
+    promotionType: '',
+    movieStatus: '',
   })
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
@@ -28,6 +37,16 @@ function ReportsPage() {
     event.preventDefault()
     setError(null)
     setResult(null)
+
+    if (!form.startDate || !form.endDate) {
+      setError(new Error('Start date and end date are required.'))
+      return
+    }
+    if (form.startDate > form.endDate) {
+      setError(new Error('Start date must be before or equal to end date.'))
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -37,10 +56,28 @@ function ReportsPage() {
         groupBy: form.groupBy,
       }
 
+      if (form.type === 'booking') {
+        payload.statuses = form.statuses.length ? form.statuses : null
+        payload.channels = form.channels.length ? form.channels : null
+        payload.movieId = form.movieId ? Number(form.movieId) : null
+      }
+      if (form.type === 'payment') {
+        payload.paymentStatus = form.paymentStatus || null
+        payload.paymentMethod = form.paymentMethod || null
+      }
       if (form.type === 'revenue') {
         payload.paymentMethod = form.paymentMethod || null
         payload.completedBookingsOnly = form.completedBookingsOnly
       }
+      if (form.type === 'customer') {
+        payload.membershipLevel = form.membershipLevel || null
+        payload.userStatus = form.userStatus || null
+      }
+      if (form.type === 'promotion') {
+        payload.promotionCode = form.promotionCode || null
+        payload.promotionType = form.promotionType || null
+      }
+      if (form.type === 'movie') payload.movieStatus = form.movieStatus || null
 
       const response = await reportService[form.type](payload)
       setResult(response)
@@ -70,11 +107,11 @@ function ReportsPage() {
           <div className="form-row">
             <label className="form-label">
               Start date
-              <input className="form-control" name="startDate" type="date" value={form.startDate} onChange={updateField} />
+              <input className="form-control" name="startDate" type="date" value={form.startDate} onChange={updateField} required />
             </label>
             <label className="form-label">
               End date
-              <input className="form-control" name="endDate" type="date" value={form.endDate} onChange={updateField} />
+              <input className="form-control" name="endDate" type="date" min={form.startDate || undefined} value={form.endDate} onChange={updateField} required />
             </label>
           </div>
 
@@ -96,6 +133,22 @@ function ReportsPage() {
               ))}
             </select>
           </label>
+
+          {form.type === 'booking' ? <>
+            <label className="form-label">Movie ID<input className="form-control" name="movieId" type="number" min="1" value={form.movieId} onChange={updateField} /></label>
+            <label className="form-label">Booking statuses<select className="form-select" multiple name="statuses" value={form.statuses} onChange={(event) => setForm((current) => ({ ...current, statuses: Array.from(event.target.selectedOptions, (option) => option.value) }))}>{BOOKING_STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}</select></label>
+            <label className="form-label">Channels<input className="form-control" name="channels" placeholder="ONLINE, COUNTER" value={form.channels.join(', ')} onChange={(event) => setForm((current) => ({ ...current, channels: event.target.value.split(',').map((value) => value.trim()).filter(Boolean) }))} /></label>
+          </> : null}
+          {form.type === 'payment' ? <label className="form-label">Payment status<select className="form-select" name="paymentStatus" value={form.paymentStatus} onChange={updateField}><option value="">All</option>{['PENDING', 'PAID', 'FAILED', 'REFUNDED'].map((value) => <option key={value} value={value}>{value}</option>)}</select></label> : null}
+          {form.type === 'customer' ? <>
+            <label className="form-label">Membership level<input className="form-control" name="membershipLevel" placeholder="BRONZE / SILVER / GOLD" value={form.membershipLevel} onChange={updateField} /></label>
+            <label className="form-label">User status<select className="form-select" name="userStatus" value={form.userStatus} onChange={updateField}><option value="">All</option>{USER_STATUSES.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
+          </> : null}
+          {form.type === 'promotion' ? <>
+            <label className="form-label">Promotion code<input className="form-control" name="promotionCode" value={form.promotionCode} onChange={updateField} /></label>
+            <label className="form-label">Promotion type<input className="form-control" name="promotionType" placeholder="PERCENTAGE" value={form.promotionType} onChange={updateField} /></label>
+          </> : null}
+          {form.type === 'movie' ? <label className="form-label">Movie status<select className="form-select" name="movieStatus" value={form.movieStatus} onChange={updateField}><option value="">All</option>{MOVIE_STATUSES.map((value) => <option key={value} value={value}>{value}</option>)}</select></label> : null}
 
           <label className="form-check">
             <input
