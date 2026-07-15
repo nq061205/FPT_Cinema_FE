@@ -4,12 +4,11 @@ import { env } from '../config/env.js'
 import { useAuth } from '../hooks/useAuth.js'
 import ChatbotWidget from '../components/chat/ChatbotWidget.jsx'
 import Logo from '../assets/gemini-svg.svg'
-
 function AppLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const { hasPermission, hasRole, logout, user } = useAuth()
-  const isStaff = hasRole(['ADMIN', 'MANAGER'])
+  const isStaff = hasRole(['ADMIN', 'MANAGER', 'STAFF'])
   const visibleMainLinks = isStaff
     ? []
     : [

@@ -3,7 +3,6 @@ import { AuthProvider } from '../contexts/AuthContext.jsx'
 import AppLayout from '../layouts/AppLayout.jsx'
 import AuthLayout from '../layouts/AuthLayout.jsx'
 import PublicLayout from '../layouts/PublicLayout.jsx'
-import StaffLayout from '../layouts/StaffLayout.jsx'
 import ProtectedRoute from '../components/common/ProtectedRoute.jsx'
 import RoleHomeGuard from '../components/common/RoleHomeGuard.jsx'
 import AccessManagementPage from '../pages/admin/AccessManagementPage.jsx'
@@ -89,13 +88,11 @@ function App() {
               <Route element={<ProtectedRoute permissions={['USER_VIEW_LIST']} roles={['ADMIN']} />}>
                 <Route path="admin/users" element={<UserManagementPage />} />
               </Route>
-            </Route>
-          </Route>
 
-          <Route element={<ProtectedRoute roles={['STAFF', 'ADMIN', 'MANAGER']} />}>
-            <Route element={<StaffLayout />}>
-              <Route path="staff/check-ticket" element={<CheckTicketPage />} />
-              <Route path="staff/counter-booking" element={<CounterBookingPage />} />
+              <Route element={<ProtectedRoute roles={['STAFF', 'ADMIN', 'MANAGER']} />}>
+                <Route path="staff/check-ticket" element={<CheckTicketPage />} />
+                <Route path="staff/counter-booking" element={<CounterBookingPage />} />
+              </Route>
             </Route>
           </Route>
 
