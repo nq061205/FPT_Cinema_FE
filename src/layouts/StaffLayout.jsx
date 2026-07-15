@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { staffNavigation } from '../config/navigation.js'
 import { env } from '../config/env.js'
 import { useAuth } from '../hooks/useAuth.js'
+import Logo from '../assets/gemini-svg.svg'
 
 function StaffLayout() {
   const navigate = useNavigate()
@@ -16,8 +17,7 @@ function StaffLayout() {
     <div className="app-shell">
       <aside className="sidebar">
         <NavLink to="/staff/check-ticket" className="brand">
-          <span className="brand-mark">FC</span>
-          <span>{env.appName} Staff</span>
+          <img src={Logo} alt={env.appName} className="brand-logo" />
         </NavLink>
 
         <nav className="nav-stack" aria-label="Staff navigation">
@@ -32,8 +32,8 @@ function StaffLayout() {
       <div className="workspace">
         <header className="topbar">
           <div>
-            <span className="topbar-label">Staff</span>
-            <strong>{user?.fullName ?? user?.email ?? 'Staff member'}</strong>
+            <span className="topbar-label">Signed in</span>
+            <strong>{user?.fullName ?? user?.email ?? 'FPT Cinema member'}</strong>
           </div>
           <button className="btn btn-outline-dark btn-sm" type="button" onClick={handleLogout}>
             Sign out

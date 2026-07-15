@@ -109,23 +109,15 @@ function MovieDetailPage() {
             <span className="eyebrow">{formatLabel(movieStatus(movie))}</span>
             <h1>{movie?.title}</h1>
             <p className="movie-detail__meta">
-              {formatLabel(movie?.genre)} · {movie?.durationMinutes ?? '-'} phút · {movie?.ageRating ?? 'NR'}
+              {formatLabel(movie?.genre)} · {movie?.durationMinutes ?? '-'} mins · {movie?.ageRating ?? 'NR'}
             </p>
-            <p>{movie?.description ?? 'Chưa có mô tả cho phim này.'}</p>
-            <div className="page-actions">
-              <Link className="btn btn-danger" to="/showtimes">Chọn suất chiếu</Link>
-              {movie?.trailerUrl ? (
-                <button className="btn btn-outline-dark" type="button" onClick={() => setShowTrailer(true)}>
-                  ▶ Xem trailer
-                </button>
-              ) : null}
-            </div>
+            <p>{movie?.description ?? 'No description available for this movie.'}</p>
           </div>
         </div>
 
         <section className="panel">
           <div className="panel-header">
-            <h2>Suất chiếu</h2>
+            <h2>Showtimes</h2>
           </div>
 
           {showtimes.length ? (
@@ -133,9 +125,9 @@ function MovieDetailPage() {
               <table className="table align-middle">
                 <thead>
                   <tr>
-                    <th>Thời gian</th>
-                    <th>Phòng</th>
-                    <th className="text-end">Giá vé</th>
+                    <th>Time</th>
+                    <th>Room</th>
+                    <th className="text-end">Ticket Price</th>
                     <th />
                   </tr>
                 </thead>
@@ -147,7 +139,7 @@ function MovieDetailPage() {
                       <td className="text-end">{formatCurrency(showtime.basePrice)}</td>
                       <td className="text-end">
                         <Link className="btn btn-outline-dark btn-sm" to={`/booking?showtimeId=${showtime.id}`}>
-                          Chọn suất
+                          Select
                         </Link>
                       </td>
                     </tr>
@@ -156,13 +148,13 @@ function MovieDetailPage() {
               </table>
             </div>
           ) : (
-            <EmptyState title="Chưa có suất chiếu" description="Suất chiếu cho phim này sẽ hiển thị ở đây khi có dữ liệu." />
+            <EmptyState title="No showtimes available" description="Showtimes for this movie will appear here once scheduled." />
           )}
         </section>
 
         <section className="panel">
           <div className="panel-header">
-            <h2>Đánh giá từ người xem</h2>
+            <h2>Reviews</h2>
           </div>
 
           {reviews.length ? (
@@ -179,7 +171,7 @@ function MovieDetailPage() {
               ))}
             </div>
           ) : (
-            <EmptyState title="Chưa có đánh giá" description="Bình luận của người xem sẽ hiển thị ở đây." />
+            <EmptyState title="No reviews yet" description="Viewer comments will appear here." />
           )}
         </section>
 

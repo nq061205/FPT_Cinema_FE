@@ -1,5 +1,13 @@
 import { apiClient } from '../lib/apiClient.js'
 
+<<<<<<< HEAD
+export const paymentService = {
+  process: (payload) => apiClient.post('/payment/process', payload),
+  requestRefund: (payload) => apiClient.post('/payment/refund-request', payload),
+  confirmRefund: (payload) => apiClient.post('/payment/refund-confirm', payload),
+  rejectRefund: (payload) => apiClient.post('/payment/refund-reject', payload),
+  listPendingRefunds: () => apiClient.get('/payment/refund-requests'),
+=======
 /**
  * Payment endpoints exposed by PaymentController.
  *
@@ -17,4 +25,5 @@ export const paymentService = {
   history: () => apiClient.get('/payment/history'),
   getByCode: (paymentCode) => apiClient.get(`/payment/${encodeURIComponent(paymentCode)}`),
   vnpayReturn: (params = {}) => apiClient.get('/payment/vnpay/return', { params }),
+>>>>>>> origin/main
 }

@@ -2,139 +2,139 @@ import { useState } from 'react'
 import ErrorMessage from '../../components/common/ErrorMessage.jsx'
 import PageHeader from '../../components/common/PageHeader.jsx'
 import { formatCurrency, formatDateTime, formatLabel } from '../../lib/formatters.js'
-import { bookingService } from '../../services/booking.service.js'
-
-function isRefundPending(booking) {
-  const refundStatus = (booking.refundStatus ?? '').toString().toUpperCase()
-  return refundStatus === 'PENDING' || booking.refundPending === true
-}
-
-function isCheckedIn(booking) {
-  return String(booking.status).toUpperCase() === 'COMPLETED' || booking.checkedIn === true
-}
+import { paymentService } from '../../services/payment.service.js'
+import { ticketService } from '../../services/ticket.service.js'
 
 function CheckTicketPage() {
   const [ticketCode, setTicketCode] = useState('')
-  const [booking, setBooking] = useState(null)
+  const [ticket, setTicket] = useState(null)
   const [error, setError] = useState(null)
-  const [checking, setChecking] = useState(false)
-  const [checkInLoading, setCheckInLoading] = useState(false)
-  const [refundLoading, setRefundLoading] = useState(false)
+  const [looking, setLooking] = useState(false)
+  const [checkingIn, setCheckingIn] = useState(false)
+  const [confirmingRefund, setConfirmingRefund] = useState(false)
   const [message, setMessage] = useState('')
 
-  async function handleCheck(event) {
+  async function handleLookup(event) {
     event.preventDefault()
     if (!ticketCode.trim()) return
 
-    setChecking(true)
+    setLooking(true)
     setError(null)
     setMessage('')
-    setBooking(null)
+    setTicket(null)
 
     try {
-      const result = await bookingService.checkByCode(ticketCode.trim())
-      setBooking(result)
+      const result = await ticketService.lookup(ticketCode.trim())
+      setTicket(result)
     } catch (err) {
       setError(err)
     } finally {
-      setChecking(false)
+      setLooking(false)
     }
   }
 
-  async function handleConfirmCheckIn() {
-    if (!booking) return
+  async function handleCheckIn() {
+    if (!ticket) return
 
-    setCheckInLoading(true)
+    setCheckingIn(true)
     setError(null)
 
     try {
-      await bookingService.checkIn(booking.id ?? booking.bookingId)
-      setBooking((current) => ({ ...current, status: 'COMPLETED', checkedIn: true }))
-      setMessage('Đã xác nhận sử dụng vé.')
+      await ticketService.checkIn(ticket.ticketCode)
+      setTicket((current) => ({ ...current, status: 'USED', checkedInAt: new Date().toISOString() }))
+      setMessage('Ticket check-in successful.')
     } catch (err) {
       setError(err)
     } finally {
-      setCheckInLoading(false)
+      setCheckingIn(false)
     }
   }
 
   async function handleConfirmRefund() {
-    if (!booking) return
+    if (!ticket) return
 
-    setRefundLoading(true)
+    setConfirmingRefund(true)
     setError(null)
 
     try {
-      await bookingService.confirmRefund(booking.id ?? booking.bookingId)
-      setBooking((current) => ({ ...current, refundStatus: 'CONFIRMED', refundPending: false }))
-      setMessage('Đã xác nhận hoàn tiền mặt cho khách.')
+      await paymentService.confirmRefund({ bookingId: ticket.bookingId })
+      setTicket((current) => ({ ...current, refundCompleted: true, refundedAt: new Date().toISOString() }))
+      setMessage('Refund confirmed successfully.')
     } catch (err) {
       setError(err)
     } finally {
-      setRefundLoading(false)
+      setConfirmingRefund(false)
     }
   }
 
   return (
     <section className="page-stack">
-      <PageHeader eyebrow="Staff" title="Kiểm tra vé" description="Nhập mã vé để xem thông tin đặt vé chi tiết." />
+      <PageHeader title="Check Ticket" description="Enter ticket code to view details and confirm use/refund." />
 
-      <form className="panel redeem-voucher" onSubmit={handleCheck}>
+      <form className="panel redeem-voucher" onSubmit={handleLookup}>
         <label className="form-label redeem-voucher__field">
-          Mã vé (ticket code)
+          Ticket Code
           <input
             className="form-control"
             name="ticketCode"
-            placeholder="VD: TCK-000123"
+            placeholder="e.g., BK12345ABCDE-F10"
             value={ticketCode}
             onChange={(event) => setTicketCode(event.target.value)}
           />
         </label>
-        <button className="btn btn-danger" disabled={checking || !ticketCode.trim()} type="submit">
-          {checking ? 'Đang kiểm tra...' : 'Kiểm tra'}
+        <button className="btn btn-danger" disabled={looking || !ticketCode.trim()} type="submit">
+          {looking ? 'Looking up...' : 'Lookup'}
         </button>
       </form>
 
-      <ErrorMessage error={error} title="Không kiểm tra được vé" />
+      <ErrorMessage error={error} title="Unable to process ticket" />
       {message ? <div className="alert alert-success">{message}</div> : null}
 
-      {booking ? (
+      {ticket ? (
         <article className="panel">
           <div className="panel-header">
-            <h2>{booking.movieTitle ?? 'Vé xem phim'}</h2>
-            <span className="status-pill">{formatLabel(booking.status)}</span>
+            <h2>{ticket.movieTitle ?? 'Movie Ticket'}</h2>
+            <span className="status-pill">{formatLabel(ticket.status)}</span>
           </div>
 
           <dl className="detail-list">
-            <dt>Mã đặt vé</dt>
-            <dd>{booking.bookingCode ?? '-'}</dd>
-            <dt>Khách hàng</dt>
-            <dd>{booking.customerName ?? booking.userFullName ?? '-'}</dd>
-            <dt>Số điện thoại</dt>
-            <dd>{booking.customerPhone ?? booking.userPhone ?? '-'}</dd>
-            <dt>Phòng chiếu</dt>
-            <dd>{booking.roomName ?? '-'}</dd>
-            <dt>Suất chiếu</dt>
-            <dd>{formatDateTime(booking.startTime)}</dd>
-            <dt>Ghế</dt>
-            <dd>{(booking.seatLabels ?? booking.seats ?? []).join(', ') || '-'}</dd>
-            <dt>Tổng tiền</dt>
-            <dd>{formatCurrency(booking.finalAmount)}</dd>
+            <dt>Ticket Code</dt>
+            <dd>{ticket.ticketCode ?? '-'}</dd>
+            <dt>Booking Code</dt>
+            <dd>{ticket.bookingCode ?? '-'}</dd>
+            <dt>Screening Room</dt>
+            <dd>{ticket.roomName ?? '-'}</dd>
+            <dt>Showtime</dt>
+            <dd>{formatDateTime(ticket.startTime)}</dd>
+            <dt>Seat</dt>
+            <dd>{ticket.seatRow ?? ''}{ticket.seatNumber ?? ''}</dd>
+            <dt>Total Price</dt>
+            <dd>{formatCurrency(ticket.finalAmount)}</dd>
+            {ticket.checkedInAt ? (
+              <>
+                <dt>Checked-in at</dt>
+                <dd>{formatDateTime(ticket.checkedInAt)}</dd>
+              </>
+            ) : null}
           </dl>
 
           <div className="page-actions">
-            {!isCheckedIn(booking) ? (
-              <button className="btn btn-danger" disabled={checkInLoading} onClick={handleConfirmCheckIn} type="button">
-                {checkInLoading ? 'Đang xác nhận...' : 'Xác nhận đã sử dụng vé'}
+            {ticket.status === 'BOOKED' ? (
+              <button className="btn btn-danger" disabled={checkingIn} onClick={handleCheckIn} type="button">
+                {checkingIn ? 'Confirming...' : 'Confirm Ticket Used'}
               </button>
-            ) : (
-              <span className="status-pill">Vé đã được sử dụng</span>
-            )}
+            ) : null}
 
-            {isRefundPending(booking) ? (
-              <button className="btn btn-outline-dark" disabled={refundLoading} onClick={handleConfirmRefund} type="button">
-                {refundLoading ? 'Đang xác nhận...' : 'Xác nhận đã trả tiền mặt'}
+            {ticket.refundRequested && !ticket.refundCompleted ? (
+              <button className="btn btn-outline-dark" disabled={confirmingRefund} onClick={handleConfirmRefund} type="button">
+                {confirmingRefund
+                  ? 'Confirming...'
+                  : `Confirm Refund (${ticket.refundMethod === 'CASH' ? 'cash' : 'online'})`}
               </button>
+            ) : null}
+
+            {ticket.refundCompleted ? (
+              <span className="status-pill">Refunded · {formatDateTime(ticket.refundedAt)}</span>
             ) : null}
           </div>
         </article>

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import ErrorMessage from '../../components/common/ErrorMessage.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
-import { getDefaultRouteForUser } from '../../lib/authRouting.js'
+import { getRoleHome } from '../../lib/roleHome.js'
 
 function LoginPage() {
   const navigate = useNavigate()
@@ -20,11 +20,11 @@ function LoginPage() {
     setError(null)
 
     try {
-      const authenticatedUser = await login(form)
+      const account = await login(form)
       const from = location.state?.from
       const destination = from
         ? `${from.pathname}${from.search ?? ''}${from.hash ?? ''}`
-        : getDefaultRouteForUser(authenticatedUser)
+        : getRoleHome(account?.role)
       navigate(destination, { replace: true })
     } catch (err) {
       setError(err)

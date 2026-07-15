@@ -14,7 +14,7 @@ const EMPTY_MOVIES = []
 
 function MovieRow({ movies }) {
   if (!movies.length) {
-    return <EmptyState title="Chưa có phim" description="Phim mới sẽ hiển thị ở đây khi có dữ liệu." />
+    return <EmptyState title="No movies found" description="New movies will appear here when available." />
   }
 
   return (
@@ -30,9 +30,9 @@ function MovieRow({ movies }) {
           </Link>
           <div className="movie-poster-card__body">
             <h3>{movie.title}</h3>
-            <p>{formatLabel(movie.genre)} · {movie.durationMinutes ?? '-'} phút</p>
+            <p>{formatLabel(movie.genre)} · {movie.durationMinutes ?? '-'} mins</p>
             <Link className="btn btn-danger btn-sm movie-poster-card__cta" to={`/movies/${movie.id}`}>
-              Đặt vé
+              Book tickets
             </Link>
           </div>
         </div>
@@ -49,11 +49,11 @@ function SpotlightCarousel({ movies, onPlayTrailer }) {
     return (
       <section className="hero-banner">
         <div className="hero-banner__content">
-          <span className="eyebrow">Đang chiếu</span>
-          <h1>Đặt vé xem phim nhanh chóng</h1>
-          <p>Khám phá phim đang chiếu, lịch chiếu mới nhất và đặt vé chỉ trong vài bước.</p>
+          <span className="eyebrow">Now Showing</span>
+          <h1>Fast Movie Ticket Booking</h1>
+          <p>Discover movies now showing, latest schedules, and book tickets in just a few steps.</p>
           <div className="page-actions">
-            <Link className="btn btn-danger" to="/movies">Đặt vé ngay</Link>
+            <Link className="btn btn-danger" to="/movies">Book Now</Link>
           </div>
         </div>
       </section>
@@ -82,7 +82,7 @@ function SpotlightCarousel({ movies, onPlayTrailer }) {
   return (
     <section className="spotlight">
       {showSides ? (
-        <button className="spotlight-arrow spotlight-arrow--prev" type="button" onClick={goPrev} aria-label="Phim trước">
+        <button className="spotlight-arrow spotlight-arrow--prev" type="button" onClick={goPrev} aria-label="Previous movie">
           ‹
         </button>
       ) : null}
@@ -93,7 +93,7 @@ function SpotlightCarousel({ movies, onPlayTrailer }) {
             className="spotlight-side spotlight-side--prev"
             type="button"
             onClick={goPrev}
-            aria-label={`Xem ${prevMovie.title}`}
+            aria-label={`View ${prevMovie.title}`}
           >
             {prevMovie.posterUrl ? <img src={prevMovie.posterUrl} alt={prevMovie.title} /> : <div className="poster-fallback" />}
           </button>
@@ -113,11 +113,11 @@ function SpotlightCarousel({ movies, onPlayTrailer }) {
           ) : null}
 
           <div className="spotlight-main__content">
-            <span className="eyebrow">Đang chiếu</span>
+            <span className="eyebrow">Now Showing</span>
             <h1>{current.title}</h1>
-            <p>{formatLabel(current.genre)} · {current.durationMinutes ?? '-'} phút · {current.ageRating ?? 'NR'}</p>
+            <p>{formatLabel(current.genre)} · {current.durationMinutes ?? '-'} mins · {current.ageRating ?? 'NR'}</p>
             <div className="page-actions">
-              <Link className="btn btn-danger" to={`/movies/${current.id}`}>Đặt vé ngay</Link>
+              <Link className="btn btn-danger" to={`/movies/${current.id}`}>Book Now</Link>
             </div>
           </div>
         </div>
@@ -127,7 +127,7 @@ function SpotlightCarousel({ movies, onPlayTrailer }) {
             className="spotlight-side spotlight-side--next"
             type="button"
             onClick={goNext}
-            aria-label={`Xem ${nextMovie.title}`}
+            aria-label={`View ${nextMovie.title}`}
           >
             {nextMovie.posterUrl ? <img src={nextMovie.posterUrl} alt={nextMovie.title} /> : <div className="poster-fallback" />}
           </button>
@@ -135,7 +135,7 @@ function SpotlightCarousel({ movies, onPlayTrailer }) {
       </div>
 
       {showSides ? (
-        <button className="spotlight-arrow spotlight-arrow--next" type="button" onClick={goNext} aria-label="Phim tiếp theo">
+        <button className="spotlight-arrow spotlight-arrow--next" type="button" onClick={goNext} aria-label="Next movie">
           ›
         </button>
       ) : null}
@@ -161,6 +161,7 @@ function HomePage() {
     }),
     [visibleMovies],
   )
+  
   const comingSoon = useMemo(
     () => visibleMovies.filter((movie) => movie.status === 'COMING_SOON' || (!movie.status && (!movie.releaseDate || new Date(movie.releaseDate) > new Date()))),
     [visibleMovies],
@@ -193,16 +194,14 @@ function HomePage() {
       <DataState error={isAuthenticated ? error : null} loading={loading}>
         <section className="panel">
           <div className="panel-header">
-            <h2>Phim đang chiếu</h2>
-            <Link to="/movies">Xem tất cả</Link>
+            <h2>Now Showing</h2>
           </div>
           <MovieRow movies={nowShowing} />
         </section>
 
         <section className="panel">
           <div className="panel-header">
-            <h2>Phim sắp chiếu</h2>
-            <Link to="/movies">Xem tất cả</Link>
+            <h2>Coming Soon</h2>
           </div>
           <MovieRow movies={comingSoon} />
         </section>

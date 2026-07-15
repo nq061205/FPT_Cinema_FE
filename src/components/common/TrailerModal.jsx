@@ -16,7 +16,7 @@ function TrailerModal({ movie, onClose }) {
   return (
     <div className="trailer-modal" onClick={onClose}>
       <div className="trailer-modal__dialog" onClick={(event) => event.stopPropagation()}>
-        <button className="trailer-modal__close" type="button" onClick={onClose} aria-label="Đóng trailer">
+        <button className="trailer-modal__close" type="button" onClick={onClose} aria-label="Close trailer">
           ×
         </button>
         <div className="trailer-modal__player">

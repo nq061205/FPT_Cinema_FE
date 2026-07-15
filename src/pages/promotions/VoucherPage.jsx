@@ -3,7 +3,8 @@ import DataState from '../../components/common/DataState.jsx'
 import ErrorMessage from '../../components/common/ErrorMessage.jsx'
 import PageHeader from '../../components/common/PageHeader.jsx'
 import { asArray } from '../../lib/collections.js'
-import { formatDateTime, formatLabel } from '../../lib/formatters.js'
+import { formatCurrency, formatDateTime } from '../../lib/formatters.js'
+import { getPromotion, isPercentType } from '../../lib/promotions.js'
 import { useAsync } from '../../hooks/useAsync.js'
 import { promotionService } from '../../services/promotion.service.js'
 
@@ -62,7 +63,7 @@ function VoucherPage() {
 
     try {
       await promotionService.apply(code.trim())
-      setRedeemMessage('Đã lấy voucher thành công!')
+      setRedeemMessage('Voucher redeemed successfully!')
       setCode('')
       await execute()
     } catch (err) {
@@ -74,6 +75,9 @@ function VoucherPage() {
 
   return (
     <section className="page-stack">
+<<<<<<< HEAD
+      <PageHeader eyebrow="Account" title="My voucher" description="Promotions and discount codes you own." />
+=======
       <PageHeader eyebrow="Account" title="My voucher" description="Ưu đãi và mã giảm giá bạn đang sở hữu." />
       <ErrorMessage error={actionError} />
       {message ? <div className="alert alert-success">{message}</div> : null}
@@ -86,33 +90,60 @@ function VoucherPage() {
         <button className="btn btn-outline-danger" type="button" disabled={acting || !promotionDetail} onClick={applyPromotion}>Đánh dấu đã dùng (API)</button>
       </form>
       {promotionDetail ? <article className="panel"><dl className="detail-list"><dt>Name</dt><dd>{promotionDetail.name}</dd><dt>Type</dt><dd>{formatLabel(promotionDetail.promotionType)}</dd><dt>Value</dt><dd>{promotionDetail.discountValue}</dd><dt>Status</dt><dd>{promotionDetail.isActive ? 'Active' : 'Inactive'}</dd></dl></article> : null}
+>>>>>>> origin/main
 
       <form className="panel redeem-voucher" onSubmit={handleRedeem}>
         <label className="form-label redeem-voucher__field">
-          Nhập mã voucher
+          Enter voucher code
           <input
             className="form-control"
             name="code"
-            placeholder="VD: SUMMER10"
+            placeholder="e.g. SUMMER10"
             value={code}
             onChange={(event) => setCode(event.target.value)}
           />
         </label>
         <button className="btn btn-danger" disabled={redeeming || !code.trim()} type="submit">
-          {redeeming ? 'Đang lấy...' : 'Lấy voucher'}
+          {redeeming ? 'Redeeming...' : 'Redeem voucher'}
         </button>
-        <ErrorMessage error={redeemError} title="Không lấy được voucher" />
+        <ErrorMessage error={redeemError} title="Could not redeem voucher" />
         {redeemMessage ? <div className="alert alert-success mb-0">{redeemMessage}</div> : null}
       </form>
 
       <DataState
         data={vouchers}
-        emptyTitle="Chưa có voucher"
-        emptyDescription="Voucher và ưu đãi bạn nhận được sẽ hiển thị ở đây."
+        emptyTitle="No vouchers yet"
+        emptyDescription="Vouchers and promotions you redeem will appear here."
         error={error}
         loading={loading}
       >
         <div className="module-grid">
+<<<<<<< HEAD
+          {vouchers.map((voucher) => {
+            const promotion = getPromotion(voucher)
+            return (
+              <article className="module-card" key={promotion.id ?? promotion.promotionCode}>
+                <h2>{promotion.name ?? promotion.promotionCode ?? 'Voucher'}</h2>
+                <dl className="detail-list">
+                  <dt>Code</dt>
+                  <dd>{promotion.promotionCode ?? '-'}</dd>
+                  <dt>Discount</dt>
+                  <dd>
+                    {promotion.discountValue
+                      ? isPercentType(promotion.promotionType)
+                        ? `${promotion.discountValue}%`
+                        : formatCurrency(promotion.discountValue)
+                      : '-'}
+                  </dd>
+                  <dt>Expires</dt>
+                  <dd>{formatDateTime(promotion.endDate)}</dd>
+                  <dt>Status</dt>
+                  <dd><span className="status-pill">{promotion.isActive === false ? 'Expired' : 'Active'}</span></dd>
+                </dl>
+              </article>
+            )
+          })}
+=======
           {vouchers.map((voucher) => (
             <article className="module-card" key={voucher.userPromotionId ?? voucher.id}>
               <h2>{voucher.promotion?.name ?? voucher.title ?? voucher.name ?? 'Voucher'}</h2>
@@ -131,6 +162,7 @@ function VoucherPage() {
               </dl>
             </article>
           ))}
+>>>>>>> origin/main
         </div>
       </DataState>
     </section>
