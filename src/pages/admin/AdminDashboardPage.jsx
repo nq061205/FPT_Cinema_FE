@@ -3,6 +3,7 @@ import PageHeader from '../../components/common/PageHeader.jsx'
 
 const modules = [
   { title: 'Rooms', path: '/admin/rooms', description: 'Room CRUD, status, seat maps.' },
+  { title: 'Reviews', path: '/admin/reviews', description: 'Manage user reviews and ratings.' },
   { title: 'Users', path: '/admin/users', description: 'Accounts, roles, permissions.' },
   { title: 'Reports', path: '/admin/reports', description: 'Revenue, booking, payment, movie reports.' },
 ]

@@ -1,32 +1,34 @@
-import { useCallback } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import DataState from '../../components/common/DataState.jsx'
-import EmptyState from '../../components/common/EmptyState.jsx'
-import { asArray } from '../../lib/collections.js'
-import { formatCurrency, formatDateTime, formatLabel } from '../../lib/formatters.js'
-import { useAsync } from '../../hooks/useAsync.js'
-import { movieService } from '../../services/movie.service.js'
-import { reviewService } from '../../services/review.service.js'
-import { showtimeService } from '../../services/showtime.service.js'
-
+import { useCallback } from "react";
+import { Link, useParams } from "react-router-dom";
+import DataState from "../../components/common/DataState.jsx";
+import EmptyState from "../../components/common/EmptyState.jsx";
+import { asArray } from "../../lib/collections.js";
+import {
+  formatCurrency,
+  formatDateTime,
+  formatLabel,
+} from "../../lib/formatters.js";
+import { useAsync } from "../../hooks/useAsync.js";
+import { movieService } from "../../services/movie.service.js";
+import { showtimeService } from "../../services/showtime.service.js";
+import MovieReviewSection from "../../components/reviews/MovieReviewSection.jsx";
 function MovieDetailPage() {
-  const { movieId } = useParams()
+  const { movieId } = useParams();
 
   const loadMovie = useCallback(async () => {
-    const [movie, showtimes, reviews] = await Promise.all([
+    const [movie, showtimes] = await Promise.all([
       movieService.getById(movieId),
       showtimeService.list({ movieId }),
-      reviewService.listByMovie(movieId),
-    ])
+    ]);
 
-    return { movie, showtimes: asArray(showtimes), reviews: asArray(reviews) }
-  }, [movieId])
+    return { movie, showtimes: asArray(showtimes) };
+  }, [movieId]);
 
   const { data, error, loading } = useAsync(loadMovie, {
-    initialData: { movie: null, showtimes: [], reviews: [] },
-  })
+    initialData: { movie: null, showtimes: [] },
+  });
 
-  const { movie, showtimes, reviews } = data
+  const { movie, showtimes } = data;
 
   return (
     <section className="page-stack">
@@ -44,11 +46,14 @@ function MovieDetailPage() {
             <span className="eyebrow">{formatLabel(movie?.status)}</span>
             <h1>{movie?.title}</h1>
             <p className="movie-detail__meta">
-              {formatLabel(movie?.genre)} · {movie?.durationMinutes ?? '-'} phút · {movie?.ageRating ?? 'NR'}
+              {formatLabel(movie?.genre)} · {movie?.durationMinutes ?? "-"} phút
+              · {movie?.ageRating ?? "NR"}
             </p>
-            <p>{movie?.description ?? 'Chưa có mô tả cho phim này.'}</p>
+            <p>{movie?.description ?? "Chưa có mô tả cho phim này."}</p>
             <div className="page-actions">
-              <Link className="btn btn-danger" to="/showtimes">Chọn suất chiếu</Link>
+              <Link className="btn btn-danger" to="/showtimes">
+                Chọn suất chiếu
+              </Link>
             </div>
           </div>
         </div>
@@ -74,9 +79,14 @@ function MovieDetailPage() {
                     <tr key={showtime.id}>
                       <td>{formatDateTime(showtime.startTime)}</td>
                       <td>{showtime.roomName ?? `Phòng ${showtime.roomId}`}</td>
-                      <td className="text-end">{formatCurrency(showtime.basePrice)}</td>
                       <td className="text-end">
-                        <Link className="btn btn-outline-dark btn-sm" to={`/booking?showtimeId=${showtime.id}`}>
+                        {formatCurrency(showtime.basePrice)}
+                      </td>
+                      <td className="text-end">
+                        <Link
+                          className="btn btn-outline-dark btn-sm"
+                          to={`/booking?showtimeId=${showtime.id}`}
+                        >
                           Chọn suất
                         </Link>
                       </td>
@@ -86,35 +96,18 @@ function MovieDetailPage() {
               </table>
             </div>
           ) : (
-            <EmptyState title="Chưa có suất chiếu" description="Suất chiếu cho phim này sẽ hiển thị ở đây khi có dữ liệu." />
+            <EmptyState
+              title="Chưa có suất chiếu"
+              description="Suất chiếu cho phim này sẽ hiển thị ở đây khi có dữ liệu."
+            />
           )}
         </section>
 
-        <section className="panel">
-          <div className="panel-header">
-            <h2>Đánh giá từ người xem</h2>
-          </div>
-
-          {reviews.length ? (
-            <div className="review-list">
-              {reviews.map((review) => (
-                <article className="review-item" key={review.id}>
-                  <div className="review-item__head">
-                    <strong>{review.userName ?? review.fullName ?? 'Người dùng ẩn danh'}</strong>
-                    {review.rating ? <span className="status-pill">{review.rating}/5 ★</span> : null}
-                  </div>
-                  <p>{review.comment ?? review.content}</p>
-                  <small className="muted">{formatDateTime(review.createdAt)}</small>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <EmptyState title="Chưa có đánh giá" description="Bình luận của người xem sẽ hiển thị ở đây." />
-          )}
-        </section>
+        {/* Review & rating */}
+        <MovieReviewSection movieId={movieId} />
       </DataState>
     </section>
-  )
+  );
 }
 
-export default MovieDetailPage
+export default MovieDetailPage;

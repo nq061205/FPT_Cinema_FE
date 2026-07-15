@@ -1,33 +1,42 @@
-import { useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import ErrorMessage from '../../components/common/ErrorMessage.jsx'
-import { useAuth } from '../../hooks/useAuth.js'
+import { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import ErrorMessage from "../../components/common/ErrorMessage.jsx";
+import { useAuth } from "../../hooks/useAuth.js";
 
 function LoginPage() {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const { login } = useAuth()
-  const [form, setForm] = useState({ email: '', password: '' })
-  const [error, setError] = useState(null)
-  const [submitting, setSubmitting] = useState(false)
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   function updateField(event) {
-    setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
+    setForm((current) => ({
+      ...current,
+      [event.target.name]: event.target.value,
+    }));
   }
 
   async function handleSubmit(event) {
-    event.preventDefault()
-    setSubmitting(true)
-    setError(null)
+    event.preventDefault();
+    setSubmitting(true);
+    setError(null);
 
     try {
-      await login(form)
-      const destination = location.state?.from?.pathname ?? '/'
-      navigate(destination, { replace: true })
+      const user = await login(form);
+      const role = user?.role?.toUpperCase();
+      console.log("Login response role:", user?.role, "→", role);
+      const destination =
+        role === "MANAGER"
+          ? "/manager"
+          : (location.state?.from?.pathname ?? "/");
+      console.log("Navigating to:", destination);
+      navigate(destination, { replace: true });
     } catch (err) {
-      setError(err)
+      setError(err);
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
   }
 
@@ -66,15 +75,19 @@ function LoginPage() {
         />
       </label>
 
-      <button className="btn btn-danger w-100" type="submit" disabled={submitting}>
-        {submitting ? 'Signing in...' : 'Sign in'}
+      <button
+        className="btn btn-danger w-100"
+        type="submit"
+        disabled={submitting}
+      >
+        {submitting ? "Signing in..." : "Sign in"}
       </button>
 
       <p className="auth-switch">
         New account? <Link to="/register">Register</Link>
       </p>
     </form>
-  )
+  );
 }
 
-export default LoginPage
+export default LoginPage;
