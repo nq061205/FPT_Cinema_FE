@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import DataState from '../../components/common/DataState.jsx'
 import EmptyState from '../../components/common/EmptyState.jsx'
+import TrailerModal from '../../components/common/TrailerModal.jsx'
 import { asArray } from '../../lib/collections.js'
 import { formatCurrency, formatDateTime, formatLabel } from '../../lib/formatters.js'
 import { useAsync } from '../../hooks/useAsync.js'
@@ -28,6 +29,7 @@ function MovieDetailPage() {
   const [editReviewError, setEditReviewError] = useState(null)
   const [editReviewMessage, setEditReviewMessage] = useState('')
   const [editReviewSubmitting, setEditReviewSubmitting] = useState(false)
+  const [showTrailer, setShowTrailer] = useState(false)
 
   const loadMovie = useCallback(async () => {
     const [movie, showtimes, reviews] = await Promise.all([
@@ -112,6 +114,11 @@ function MovieDetailPage() {
             <p>{movie?.description ?? 'Chưa có mô tả cho phim này.'}</p>
             <div className="page-actions">
               <Link className="btn btn-danger" to="/showtimes">Chọn suất chiếu</Link>
+              {movie?.trailerUrl ? (
+                <button className="btn btn-outline-dark" type="button" onClick={() => setShowTrailer(true)}>
+                  ▶ Xem trailer
+                </button>
+              ) : null}
             </div>
           </div>
         </div>
@@ -231,6 +238,8 @@ function MovieDetailPage() {
           <p className="muted">Sign in to write a review.</p>
         )}
       </DataState>
+
+      {showTrailer && movie ? <TrailerModal movie={movie} onClose={() => setShowTrailer(false)} /> : null}
     </section>
   )
 }

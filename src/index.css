@@ -360,6 +360,21 @@ p {
   gap: 12px;
 }
 
+.redeem-voucher {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+}
+
+.redeem-voucher__field {
+  flex: 1 1 260px;
+}
+
+.redeem-voucher .alert {
+  flex-basis: 100%;
+}
+
 .form-label {
   display: grid;
   gap: 6px;
@@ -620,6 +635,12 @@ p {
 
 .public-navbar .brand {
   color: #ffffff;
+}
+
+.brand-logo {
+  display: block;
+  height: 40px;
+  width: auto;
 }
 
 .public-nav-links {

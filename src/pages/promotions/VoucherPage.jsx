@@ -47,6 +47,31 @@ function VoucherPage() {
     }
   }
 
+  const [code, setCode] = useState('')
+  const [redeemError, setRedeemError] = useState(null)
+  const [redeemMessage, setRedeemMessage] = useState('')
+  const [redeeming, setRedeeming] = useState(false)
+
+  async function handleRedeem(event) {
+    event.preventDefault()
+    if (!code.trim()) return
+
+    setRedeeming(true)
+    setRedeemError(null)
+    setRedeemMessage('')
+
+    try {
+      await promotionService.apply(code.trim())
+      setRedeemMessage('Đã lấy voucher thành công!')
+      setCode('')
+      await execute()
+    } catch (err) {
+      setRedeemError(err)
+    } finally {
+      setRedeeming(false)
+    }
+  }
+
   return (
     <section className="page-stack">
       <PageHeader eyebrow="Account" title="My voucher" description="Ưu đãi và mã giảm giá bạn đang sở hữu." />
@@ -61,6 +86,24 @@ function VoucherPage() {
         <button className="btn btn-outline-danger" type="button" disabled={acting || !promotionDetail} onClick={applyPromotion}>Đánh dấu đã dùng (API)</button>
       </form>
       {promotionDetail ? <article className="panel"><dl className="detail-list"><dt>Name</dt><dd>{promotionDetail.name}</dd><dt>Type</dt><dd>{formatLabel(promotionDetail.promotionType)}</dd><dt>Value</dt><dd>{promotionDetail.discountValue}</dd><dt>Status</dt><dd>{promotionDetail.isActive ? 'Active' : 'Inactive'}</dd></dl></article> : null}
+
+      <form className="panel redeem-voucher" onSubmit={handleRedeem}>
+        <label className="form-label redeem-voucher__field">
+          Nhập mã voucher
+          <input
+            className="form-control"
+            name="code"
+            placeholder="VD: SUMMER10"
+            value={code}
+            onChange={(event) => setCode(event.target.value)}
+          />
+        </label>
+        <button className="btn btn-danger" disabled={redeeming || !code.trim()} type="submit">
+          {redeeming ? 'Đang lấy...' : 'Lấy voucher'}
+        </button>
+        <ErrorMessage error={redeemError} title="Không lấy được voucher" />
+        {redeemMessage ? <div className="alert alert-success mb-0">{redeemMessage}</div> : null}
+      </form>
 
       <DataState
         data={vouchers}
