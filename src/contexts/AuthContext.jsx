@@ -73,6 +73,14 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
+  // Xóa phiên phía client mà không gọi API logout — dùng khi token đã bị
+  // backend thu hồi (ví dụ sau khi đổi mật khẩu, mọi phiên đều bị vô hiệu hóa).
+  const endSession = useCallback(() => {
+    clearSession()
+    setToken(null)
+    setUser(null)
+  }, [])
+
   const hasRole = useCallback(
     (roles = []) => {
       if (!roles.length) return true
@@ -99,6 +107,7 @@ export function AuthProvider({ children }) {
   const value = useMemo(
     () => ({
       bootstrapping,
+      endSession,
       hasPermission,
       hasRole,
       isAuthenticated: Boolean(token),
@@ -108,7 +117,7 @@ export function AuthProvider({ children }) {
       token,
       user,
     }),
-    [bootstrapping, hasPermission, hasRole, login, logout, register, token, user],
+    [bootstrapping, endSession, hasPermission, hasRole, login, logout, register, token, user],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

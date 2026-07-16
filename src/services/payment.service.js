@@ -1,7 +1,7 @@
 import { apiClient } from '../lib/apiClient.js'
 
 export const paymentService = {
-  create: (payload) => apiClient.post('/payment/create', payload),
+  createOnline: (payload) => apiClient.post('/payment/create', payload),
   history: () => apiClient.get('/payment/history'),
   getByCode: (paymentCode) => apiClient.get(`/payment/${encodeURIComponent(paymentCode)}`),
   vnpayReturn: (params = {}) => apiClient.get('/payment/vnpay/return', { params }),
