@@ -10,6 +10,7 @@ import { formatCurrency, formatDateTime, formatLabel } from '../../lib/formatter
 import { useAsync } from '../../hooks/useAsync.js'
 import { bookingService } from '../../services/booking.service.js'
 import { movieService } from '../../services/movie.service.js'
+import { paymentService } from '../../services/payment.service.js'
 import { productService } from '../../services/product.service.js'
 import { promotionService } from '../../services/promotion.service.js'
 import { seatService } from '../../services/seat.service.js'
@@ -135,9 +136,9 @@ function CounterBookingPage() {
         seatIds: selectedSeatIds,
         products: selectedProducts,
         promotionId: promotion?.id ?? promotion?.promotionId ?? null,
-        paymentMethod,
       })
-      setResult(created)
+      const paid = await paymentService.process({ bookingId: created.id, method: paymentMethod })
+      setResult(paid)
     } catch (err) {
       setSubmitError(err)
     } finally {

@@ -8,11 +8,9 @@ import {
 import {
   adminNavigation,
   customerNavigation,
-  mainNavigation,
 } from "../config/navigation.js";
 import { env } from "../config/env.js";
 import { useAuth } from "../hooks/useAuth.js";
-
 import ChatbotWidget from '../components/chat/ChatbotWidget.jsx'
 import Logo from '../assets/gemini-svg.svg'
 
@@ -26,18 +24,11 @@ function AppLayout() {
     return <Navigate to="/manager" replace />;
   }
 
-  const visibleMainLinks = isStaff
-    ? []
-    : [
-        ...mainNavigation,
-        ...customerNavigation.filter(
-          (customerItem) => !mainNavigation.some((mainItem) => mainItem.path === customerItem.path)
-        ),
-      ]
+  const visibleMainLinks = isStaff ? [] : customerNavigation
   const visibleAdminLinks = adminNavigation.filter((item) => {
     return hasRole(item.roles ?? []) && hasPermission(item.permissions ?? [])
   })
-  const isBookingFlow = location.pathname === "/booking";
+
   async function handleLogout() {
     await logout();
     navigate("/login", { replace: true });

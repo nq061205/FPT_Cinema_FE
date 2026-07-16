@@ -17,9 +17,10 @@ import ReportsPage from '../pages/admin/ReportsPage.jsx';
 import SeatManagementPage from '../pages/admin/SeatManagementPage.jsx';
 import UserManagementPage from '../pages/admin/UserManagementPage.jsx';
 import RoomManagementPage from "../pages/admin/RoomManagementPage.jsx";
+import ShowtimeManagementPage from "../pages/admin/ShowtimeManagementPage.jsx";
 
 import ManagerDashboardPage from "../pages/manager/ManagerDashboardPage.jsx";
-import ShowtimeManagementPage from "../pages/manager/ShowtimeManagementPage.jsx";
+import ManagerShowtimeManagementPage from "../pages/manager/ShowtimeManagementPage.jsx";
 import ManagerRoomManagementPage from "../pages/manager/RoomManagementPage.jsx";
 import ReviewManagementPage from "../pages/manager/ReviewManagementPage.jsx";
 
@@ -110,7 +111,7 @@ function App() {
                 <Route path="manager/movies" element={<MovieManagementPage />} />
                 <Route path="manager/reviews" element={<ReviewManagementPage />} />
                 <Route path="manager/rooms" element={<ManagerRoomManagementPage />} />
-                <Route path="manager/showtimes" element={<ShowtimeManagementPage />} />
+                <Route path="manager/showtimes" element={<ManagerShowtimeManagementPage />} />
               </Route>
             </Route>
           </Route>
