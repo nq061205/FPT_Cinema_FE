@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import DataState from '../../components/common/DataState.jsx'
 import ErrorMessage from '../../components/common/ErrorMessage.jsx'
@@ -9,8 +9,6 @@ import { formatLabel } from '../../lib/formatters.js'
 import { useAsync } from '../../hooks/useAsync.js'
 import { movieService } from '../../services/movie.service.js'
 import { reviewService } from '../../services/review.service.js'
-import { roomService } from '../../services/room.service.js'
-import { showtimeService } from '../../services/showtime.service.js'
 
 const emptyMovieForm = {
   title: '',
@@ -21,28 +19,19 @@ const emptyMovieForm = {
   posterUrl: '',
   trailerUrl: '',
   status: 'NOW_SHOWING',
+  releaseDate: '',
 }
-
-const emptyShowtimeForm = { roomId: '', startTime: '', basePrice: '' }
 
 function MovieManagementPage() {
   const loadMovies = useCallback(async () => asArray(await movieService.list()), [])
   const { data: movies, error, loading, execute } = useAsync(loadMovies, { initialData: [] })
-
-  const loadRooms = useCallback(async () => asArray(await roomService.list({ size: 50 })), [])
-  const { data: rooms } = useAsync(loadRooms, { initialData: [] })
 
   const [filters, setFilters] = useState({ title: '', genre: '', status: '' })
   const [form, setForm] = useState(emptyMovieForm)
   const [editingId, setEditingId] = useState(null)
   const [actionError, setActionError] = useState(null)
   const [saving, setSaving] = useState(false)
-
-  const [showtimeMovieId, setShowtimeMovieId] = useState(null)
-  const [showtimeForm, setShowtimeForm] = useState(emptyShowtimeForm)
-  const [showtimeError, setShowtimeError] = useState(null)
-  const [showtimeSaving, setShowtimeSaving] = useState(false)
-  const [showtimeMessage, setShowtimeMessage] = useState('')
+  const [deletingId, setDeletingId] = useState(null)
 
   const filteredMovies = useMemo(() => {
     return movies.filter((movie) => {
@@ -72,6 +61,7 @@ function MovieManagementPage() {
       posterUrl: movie.posterUrl ?? '',
       trailerUrl: movie.trailerUrl ?? '',
       status: movie.status ?? 'NOW_SHOWING',
+      releaseDate: movie.releaseDate ?? '',
     })
   }
 
@@ -103,46 +93,20 @@ function MovieManagementPage() {
     }
   }
 
-  async function changeStatus(movie, status) {
+  async function handleDelete(movie) {
+    if (!window.confirm(`Delete "${movie.title}"? This cannot be undone.`)) return
+
     setActionError(null)
+    setDeletingId(movie.id)
 
     try {
-      await movieService.updateStatus(movie.id, status)
+      await movieService.remove(movie.id)
+      if (editingId === movie.id) cancelEdit()
       await execute()
     } catch (err) {
       setActionError(err)
-    }
-  }
-
-  function openShowtimeForm(movieId) {
-    setShowtimeMovieId(movieId)
-    setShowtimeForm(emptyShowtimeForm)
-    setShowtimeError(null)
-    setShowtimeMessage('')
-  }
-
-  function updateShowtimeField(event) {
-    setShowtimeForm((current) => ({ ...current, [event.target.name]: event.target.value }))
-  }
-
-  async function handleAssignShowtime(event) {
-    event.preventDefault()
-    setShowtimeSaving(true)
-    setShowtimeError(null)
-
-    try {
-      await showtimeService.create({
-        movieId: showtimeMovieId,
-        roomId: Number(showtimeForm.roomId),
-        startTime: showtimeForm.startTime,
-        basePrice: Number(showtimeForm.basePrice),
-      })
-      setShowtimeMessage('Showtime created successfully.')
-      setShowtimeForm(emptyShowtimeForm)
-    } catch (err) {
-      setShowtimeError(err)
     } finally {
-      setShowtimeSaving(false)
+      setDeletingId(null)
     }
   }
 
@@ -151,12 +115,9 @@ function MovieManagementPage() {
       <PageHeader
         eyebrow="Management"
         title="Movie Management"
-        description="Create, update movies, assign showtimes, and track statistics."
+        description="Create, update, and delete movies."
         actions={<Link className="btn btn-outline-dark" to="/admin/reports">View revenue / statistics</Link>}
       />
-
-      {/* TODO: xóa cảnh báo này sau khi xác nhận movieService.updateStatus đã có API backend tương ứng */}
-      <div className="alert alert-info">Backend hiện tạo phim mới ở trạng thái COMING_SOON; xác nhận API đổi status/release date đã sẵn sàng trước khi dùng các nút đổi trạng thái bên dưới.</div>
 
       <ErrorMessage error={actionError} />
 
@@ -191,6 +152,13 @@ function MovieManagementPage() {
           <label className="form-label">
             Age Rating
             <input className="form-control" name="ageRating" placeholder="e.g. T13" value={form.ageRating} onChange={updateField} />
+          </label>
+        </div>
+
+        <div className="form-row">
+          <label className="form-label">
+            Release Date
+            <input className="form-control" name="releaseDate" type="date" value={form.releaseDate} onChange={updateField} />
           </label>
         </div>
 
@@ -248,51 +216,33 @@ function MovieManagementPage() {
                 <th>Movie Title</th>
                 <th>Genre</th>
                 <th>Duration</th>
+                <th>Release Date</th>
                 <th>Status</th>
                 <th className="text-end">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredMovies.map((movie) => (
-                <Fragment key={movie.id}>
-                  <tr>
-                    <td>{movie.title}</td>
-                    <td>{formatLabel(movie.genre)}</td>
-                    <td>{movie.durationMinutes ?? '-'} mins</td>
-                    <td><span className="status-pill">{formatLabel(movie.status)}</span></td>
-                    <td className="text-end">
-                      <div className="btn-group btn-group-sm">
-                        <button className="btn btn-outline-dark" type="button" onClick={() => startEdit(movie)}>Edit</button>
-                        <button className="btn btn-outline-dark" type="button" onClick={() => changeStatus(movie, 'NOW_SHOWING')}>Now Showing</button>
-                        <button className="btn btn-outline-dark" type="button" onClick={() => changeStatus(movie, 'COMING_SOON')}>Coming Soon</button>
-                        <button className="btn btn-outline-dark" type="button" onClick={() => changeStatus(movie, 'END_OF_SHOWING')}>End of Showing</button>
-                        <button className="btn btn-outline-dark" type="button" onClick={() => openShowtimeForm(movie.id)}>+ Showtime</button>
-                      </div>
-                    </td>
-                  </tr>
-                  {showtimeMovieId === movie.id ? (
-                    <tr>
-                      <td colSpan={5}>
-                        <form className="filter-bar" onSubmit={handleAssignShowtime}>
-                          <select className="form-select" name="roomId" value={showtimeForm.roomId} onChange={updateShowtimeField} required>
-                            <option value="">Select room</option>
-                            {rooms.map((room) => (
-                              <option key={room.id} value={room.id}>{room.roomName}</option>
-                            ))}
-                          </select>
-                          <input className="form-control" name="startTime" type="datetime-local" value={showtimeForm.startTime} onChange={updateShowtimeField} required />
-                          <input className="form-control" name="basePrice" type="number" min="0" placeholder="Base price" value={showtimeForm.basePrice} onChange={updateShowtimeField} required />
-                          <button className="btn btn-danger" disabled={showtimeSaving} type="submit">
-                            {showtimeSaving ? 'Creating...' : 'Create Showtime'}
-                          </button>
-                          <button className="btn btn-outline-dark" type="button" onClick={() => setShowtimeMovieId(null)}>Close</button>
-                        </form>
-                        <ErrorMessage error={showtimeError} title="Failed to create showtime" />
-                        {showtimeMessage ? <div className="alert alert-success mb-0">{showtimeMessage}</div> : null}
-                      </td>
-                    </tr>
-                  ) : null}
-                </Fragment>
+                <tr key={movie.id}>
+                  <td>{movie.title}</td>
+                  <td>{formatLabel(movie.genre)}</td>
+                  <td>{movie.durationMinutes ?? '-'} mins</td>
+                  <td>{movie.releaseDate ?? '-'}</td>
+                  <td><span className="status-pill">{formatLabel(movie.status)}</span></td>
+                  <td className="text-end">
+                    <div className="btn-group btn-group-sm">
+                      <button className="btn btn-outline-dark" type="button" onClick={() => startEdit(movie)}>Edit</button>
+                      <button
+                        className="btn btn-outline-dark"
+                        disabled={deletingId === movie.id}
+                        onClick={() => handleDelete(movie)}
+                        type="button"
+                      >
+                        {deletingId === movie.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
               ))}
             </tbody>
           </table>

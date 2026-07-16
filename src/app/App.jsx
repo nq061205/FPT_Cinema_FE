@@ -22,7 +22,6 @@ import BookingHistoryPage from '../pages/booking/BookingHistoryPage.jsx'
 import MovieDetailPage from '../pages/movies/MovieDetailPage.jsx'
 import MovieListPage from '../pages/movies/MovieListPage.jsx'
 import PaymentHistoryPage from '../pages/payment/PaymentHistoryPage.jsx'
-import PaymentDeskPage from '../pages/payment/PaymentDeskPage.jsx'
 import PaymentResultPage from '../pages/payment/PaymentResultPage.jsx'
 import ProfilePage from '../pages/profile/ProfilePage.jsx'
 import VoucherPage from '../pages/promotions/VoucherPage.jsx'
@@ -79,10 +78,6 @@ function App() {
 
               <Route element={<ProtectedRoute roles={['ADMIN']} />}>
                 <Route path="admin/access" element={<AccessManagementPage />} />
-              </Route>
-
-              <Route element={<ProtectedRoute roles={['STAFF']} />}>
-                <Route path="admin/payments" element={<PaymentDeskPage />} />
               </Route>
 
               <Route element={<ProtectedRoute permissions={['USER_VIEW_LIST']} roles={['ADMIN']} />}>

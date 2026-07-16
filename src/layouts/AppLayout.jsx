@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { adminNavigation, customerNavigation, mainNavigation } from '../config/navigation.js'
+import { adminNavigation, customerNavigation } from '../config/navigation.js'
 import { env } from '../config/env.js'
 import { useAuth } from '../hooks/useAuth.js'
 import ChatbotWidget from '../components/chat/ChatbotWidget.jsx'
@@ -9,14 +9,7 @@ function AppLayout() {
   const navigate = useNavigate()
   const { hasPermission, hasRole, logout, user } = useAuth()
   const isStaff = hasRole(['ADMIN', 'MANAGER', 'STAFF'])
-  const visibleMainLinks = isStaff
-    ? []
-    : [
-        ...mainNavigation,
-        ...customerNavigation.filter(
-          (customerItem) => !mainNavigation.some((mainItem) => mainItem.path === customerItem.path)
-        ),
-      ]
+  const visibleMainLinks = isStaff ? [] : customerNavigation
   const visibleAdminLinks = adminNavigation.filter((item) => {
     return hasRole(item.roles ?? []) && hasPermission(item.permissions ?? [])
   })
